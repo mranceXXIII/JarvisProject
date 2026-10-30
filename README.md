@@ -176,15 +176,21 @@ activate a virtual environment.
 
 ### 2. Install project dependencies
 
-Once the project has a `requirements.txt` or `pyproject.toml`, install
-the pinned dependencies using the documented project command. For
-example:
+Phase 1 created `requirements.txt` with pinned, verified versions. Install
+them into the virtual environment:
 
 ``` powershell
 python -m pip install -r requirements.txt
 ```
 
-This command will only work after that dependency file has been created.
+For development (including tests):
+
+``` powershell
+python -m pip install -r requirements-dev.txt
+```
+
+The Python version used for the Phase 1 build was **3.14**. If you use a
+different version, run the test suite to verify compatibility.
 
 ### 3. Configure the application
 
@@ -202,9 +208,25 @@ YAML/JSON configuration, screenshots, or logs.
 
 ### 4. Run the application
 
-The exact launch command should be documented once the Phase 1
-application entry point has been implemented. Until then, do not assume
-that a `main.py` or executable already exists.
+Phase 1 provides a working entry point with validated configuration,
+secret-redacting logging, and the dashboard/tray foundation:
+
+``` powershell
+# Normal start: dashboard and/or system tray per config/settings.yaml
+python main.py
+
+# Headless start (no UI; for testing and service use)
+python main.py --headless
+```
+
+Run the automated test suite:
+
+``` powershell
+python -m pytest
+```
+
+GUI behaviour (window layout, tray icon) is verified manually; automated
+tests cover configuration, credentials, registries, and log redaction.
 
 ## Configuration
 
@@ -260,7 +282,9 @@ Security is a design requirement, not a later add-on.
 Build in small, testable phases rather than attempting the entire
 assistant in one script.
 
-1.  Project foundation, settings, logging, and application entry point.
+1.  ✅ **Complete (Phase 1).** Project foundation, settings, logging,
+    application entry point. See
+    [`PROJECT_STATUS.md`](PROJECT_STATUS.md) for details and limitations.
 2.  Universal provider and gateway manager.
 3.  AI conversation interface and provider routing.
 4.  SQLite memory and retrieval.
@@ -332,6 +356,8 @@ handling, tests, and user-facing documentation.
 -   **[`JARVIS_Project_Context.md`](JARVIS_Project_Context.md):**
     canonical requirements, architecture, preferences, and
     implementation instructions.
+-   **[`PROJECT_STATUS.md`](PROJECT_STATUS.md):** concise, honest status
+    of completed features, tests, and known limitations.
 -   **`README.md`:** project overview and setup guide (this file).
 -   Add focused documentation as features are implemented, especially
     provider setup, security, integrations, permissions, and

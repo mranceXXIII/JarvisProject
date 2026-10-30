@@ -1,0 +1,17 @@
+# --- JARVIS project ---
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Local data, logs, and secrets - never commit
+data/
+logs/
+*.log
+.env
+
+# Generated / backup files
+*.bak
+config/backups/

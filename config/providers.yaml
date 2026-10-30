@@ -1,0 +1,26 @@
+# JARVIS AI provider definitions (Phase 1: configuration skeleton).
+#
+# RULES:
+#   - NEVER put real API keys in this file. Use "credential_ref" to point at an
+#     entry in the secure credential store (Windows Credential Manager).
+#   - A provider only becomes "active" after a successful connection test
+#     (Phase 2) or an explicit user override with a warning.
+#   - Unknown extra fields (such as api_key) are rejected on load by design.
+
+providers:
+  - name: My OpenAI-compatible provider
+    type: openai_compatible
+    credential_ref: jarvis/openai-compat-apikey
+    base_url: https://api.example.com/v1
+    endpoint_path: /chat/completions
+    model: model-name-here
+    enabled: false
+    timeout_seconds: 30
+
+  - name: Local Ollama
+    type: ollama
+    base_url: http://localhost:11434
+    endpoint_path: /api/chat
+    model: llama3.1
+    enabled: false
+    timeout_seconds: 120

@@ -1,0 +1,9 @@
+# JARVIS Phase 1 runtime dependencies
+# Python: 3.14 (only runtime installed on the development machine; verified working)
+# Versions below are the exact versions verified during the Phase 1 build.
+pydantic==2.14.2
+PyYAML==6.0.3
+keyring==25.7.0
+customtkinter==6.0.0
+pystray==0.19.5
+Pillow==13.0.0

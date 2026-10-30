@@ -1,0 +1,16 @@
+# JARVIS gateway definitions (Phase 1: configuration skeleton).
+#
+# Gateways sit in front of providers (reverse proxies, OpenAI-compatible
+# gateways, local gateways). Providers reference a gateway by name through
+# their "gateway" field in providers.yaml; without it, providers connect
+# directly to their own base_url.
+#
+# NEVER put real API keys in this file. Use "credential_ref".
+
+gateways:
+  - name: My local gateway
+    url: http://localhost:8080
+    api_path: /v1
+    enabled: false
+    timeout_seconds: 30
+    headers: {}

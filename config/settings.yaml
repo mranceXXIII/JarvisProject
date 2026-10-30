@@ -1,0 +1,17 @@
+# JARVIS application settings (non-secret only).
+# Secrets must never be placed in this file. See JARVIS_Project_Context.md 5.9.
+
+app:
+  name: JARVIS
+  # What to show at launch: "dashboard", "tray", or "both"
+  startup_mode: both
+  dashboard_enabled: true
+  tray_enabled: true
+  # Directory (relative to project root) for local data such as future databases
+  data_dir: data
+
+logging:
+  level: INFO
+  file: logs/jarvis.log
+  max_bytes: 1048576      # 1 MiB per log file before rotation
+  backup_count: 5
