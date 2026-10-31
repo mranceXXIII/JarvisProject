@@ -14,11 +14,19 @@ directory and validates them with Pydantic schemas. Design rules enforced here:
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Any, Literal, Optional
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    ValidationError,
+    field_validator,
+    model_validator,
+)
 
 DEFAULT_CONFIG_DIR = Path(__file__).resolve().parent.parent / "config"
 
@@ -133,6 +141,7 @@ class AppConfig(BaseModel):
     providers: tuple[ProviderConfig, ...] = ()
     gateways: tuple[GatewayConfig, ...] = ()
     routing: "RoutingConfig" = Field(default_factory=lambda: RoutingConfig())
+    applications: tuple[ApplicationConfig, ...] = ()
 
 
 class RoutingSettings(BaseModel):
@@ -170,6 +179,66 @@ class RoutingConfig(BaseModel):
 
 
 ROUTING_FILE = "routing.yaml"
+APPLICATIONS_FILE = "applications.yaml"
+
+
+class ApplicationConfig(BaseModel):
+    """One registered application from ``applications.yaml``.
+
+    Exactly one of ``path`` or (``directory`` + ``executable``) must be
+    provided; the directory form restricts lookup to that folder only.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(min_length=1, pattern=r"^[A-Za-z0-9_-]+$")
+    display_name: str = ""
+    path: Optional[str] = None
+    directory: Optional[str] = None
+    executable: Optional[str] = None
+    args: list[str] = Field(default_factory=list)
+    working_dir: Optional[str] = None
+    aliases: list[str] = Field(default_factory=list)
+
+    @field_validator("aliases")
+    @classmethod
+    def _validate_aliases(cls, value: list[str]) -> list[str]:
+        for alias in value:
+            if not re.fullmatch(r"[A-Za-z0-9_-]+", alias):
+                raise ValueError(
+                    f"invalid alias '{alias}': use letters, digits, '-' or '_'"
+                )
+        return value
+
+    @model_validator(mode="after")
+    def _require_launch_form(self) -> "ApplicationConfig":
+        if self.path and (self.directory or self.executable):
+            raise ValueError(
+                f"application '{self.name}': use either 'path' or "
+                "'directory' + 'executable', not both"
+            )
+        if not self.path and not (self.directory and self.executable):
+            raise ValueError(
+                f"application '{self.name}': provide 'path', or both "
+                "'directory' and 'executable'"
+            )
+        if self.path and not self.display_name:
+            self.display_name = Path(self.path).stem
+        return self
+
+
+def load_application_configs(
+    config_dir: Path | str = DEFAULT_CONFIG_DIR,
+) -> tuple[ApplicationConfig, ...]:
+    """Load and validate all registered applications."""
+    path = Path(config_dir) / APPLICATIONS_FILE
+    if not path.exists():
+        return ()
+    payload = _read_yaml(path) or {}
+    apps = payload.get("applications", []) if isinstance(payload, dict) else []
+    if not isinstance(apps, list):
+        raise ConfigError(f"{path.name}: 'applications' must be a list")
+    return tuple(_validate_section(path, ApplicationConfig, item) for item in apps)
 
 
 def load_routing_config(config_dir: Path | str = DEFAULT_CONFIG_DIR) -> RoutingConfig:
@@ -243,4 +312,5 @@ def load_app_config(config_dir: Path | str = DEFAULT_CONFIG_DIR) -> AppConfig:
         providers=load_provider_configs(directory),
         gateways=load_gateway_configs(directory),
         routing=load_routing_config(directory),
+        applications=load_application_configs(directory),
     )

@@ -289,6 +289,10 @@ assistant in one script.
     Ollama, Gemini, Anthropic), gateway routing, connection testing,
     capability registry, cloud/local/hybrid routing with fallback, text
     conversation and tool calling at the AI layer.
+3.  ⏳ **Early slice done.** Application registry and safe app launcher
+    (`config/applications.yaml`, `automation/app_launcher.py`) — registered
+    apps (including PowerShell and Command Prompt) open from their
+    configured directories; full desktop automation continues in Phase 6.
 2.  Universal provider and gateway manager.
 3.  AI conversation interface and provider routing.
 4.  SQLite memory and retrieval.

@@ -49,20 +49,36 @@
   provider/gateway overview, Test Connection action with clear result
   messaging.
 
+### Early Phase 6 slice (application registry and launcher)
+- **Application registry** (`config/applications.yaml`): each app is
+  registered with either a direct `path` or a `directory` + `executable`
+  pair, so opening an app only ever looks in the folder the user configured.
+  Optional args, working directory, display name, and aliases.
+- **Safe launcher** (`automation/app_launcher.py`): resolves by name or
+  alias (case-insensitive), validates the executable exists at its
+  configured location, and launches with `subprocess.Popen` using an
+  argument list and `shell=False` — **no shell involved, no arbitrary
+  command execution**; unregistered names are refused.
+- CLI for manual use: `python -m automation.app_launcher list|open <name>`.
+- Shipped registry includes `cmd`, `powershell` (aliases: pwsh, terminal),
+  and `notepad`. Real-launch verified on Windows.
+
 ## Files created or changed (Phase 2)
 
 ```text
 requirements.txt (+requests==2.34.2)
-config/routing.yaml
-core/config_loader.py (+RoutingConfig), core/ai_router.py, core/assistant.py
+config/routing.yaml, config/applications.yaml
+core/config_loader.py (+RoutingConfig, +ApplicationConfig)
+core/ai_router.py, core/assistant.py
 providers/errors.py, providers/http_client.py, providers/base_adapter.py (rewritten),
 providers/openai_compatible.py, providers/ollama_adapter.py,
 providers/gemini_adapter.py, providers/anthropic_adapter.py,
 providers/provider_manager.py
+automation/app_launcher.py
 interface/api_gateway_panel.py, interface/dashboard.py (tabs), main.py (wiring)
 tests/fakes.py, tests/test_openai_compatible_adapter.py,
 tests/test_other_adapters.py, tests/test_router_and_manager.py,
-tests/test_assistant.py
+tests/test_assistant.py, tests/test_app_launcher.py
 ```
 
 ## Tests passed
@@ -74,6 +90,13 @@ tests/test_assistant.py
   and routing mode, idles cleanly.
 
 ## Known limitations (stated honestly)
+
+- **Launcher scope:** apps must be registered in `applications.yaml`; the
+  launcher does not search the Start Menu or the whole system, and cannot
+  yet execute shell *commands* (only registered executables). Command
+  running with allowlists and approvals arrives in the full Phase 6.
+- The launcher is not yet reachable from chat/voice (needs Phases 3-4:
+  memory, orchestration, approvals).
 
 - **No streaming** and no structured-output enforcement yet; adapters
   declare those capabilities conservatively.

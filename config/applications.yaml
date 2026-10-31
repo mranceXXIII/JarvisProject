@@ -1,0 +1,36 @@
+# JARVIS application registry (spec section 9).
+#
+# Each entry tells JARVIS exactly where an app lives so that opening it only
+# ever looks in that configured location. Two forms are supported:
+#
+#   1. Direct path:
+#        path: C:\Windows\System32\notepad.exe
+#
+#   2. Directory + executable ("look only in this directory"):
+#        directory: C:\Program Files\MyApp
+#        executable: myapp.exe
+#
+# Optional per-entry fields:
+#   display_name : friendly name shown in the UI
+#   args         : list of launch arguments
+#   working_dir  : working directory for the process (defaults to the
+#                  app's directory when using the directory form)
+#   aliases      : alternative names you can say/type to open it
+#
+# SECURITY: JARVIS launches ONLY applications registered here, and always
+# without a shell interpreter. It never executes arbitrary AI-generated
+# commands (JARVIS_Project_Context.md section 9).
+
+applications:
+  - name: cmd
+    display_name: Command Prompt
+    path: C:\Windows\System32\cmd.exe
+
+  - name: powershell
+    display_name: PowerShell
+    path: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+    aliases: [pwsh, terminal]
+
+  - name: notepad
+    display_name: Notepad
+    path: C:\Windows\System32\notepad.exe
