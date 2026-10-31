@@ -142,6 +142,9 @@ class AppConfig(BaseModel):
     gateways: tuple[GatewayConfig, ...] = ()
     routing: "RoutingConfig" = Field(default_factory=lambda: RoutingConfig())
     applications: tuple[ApplicationConfig, ...] = ()
+    permissions: "PermissionPolicy" = Field(
+        default_factory=lambda: PermissionPolicy()
+    )
 
 
 class RoutingSettings(BaseModel):
@@ -241,6 +244,31 @@ def load_application_configs(
     return tuple(_validate_section(path, ApplicationConfig, item) for item in apps)
 
 
+class PermissionPolicy(BaseModel):
+    """Approval policy from ``permissions.yaml`` (spec section 16)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    require_approval_medium: bool = True
+    require_approval_high: bool = True
+    trusted_tools: list[str] = Field(default_factory=list)
+
+
+PERMISSIONS_FILE = "permissions.yaml"
+
+
+def load_permission_policy(
+    config_dir: Path | str = DEFAULT_CONFIG_DIR,
+) -> PermissionPolicy:
+    """Load and validate ``permissions.yaml`` (defaults when missing)."""
+    path = Path(config_dir) / PERMISSIONS_FILE
+    if not path.exists():
+        return PermissionPolicy()
+    payload = _read_yaml(path) or {}
+    permissions = payload.get("permissions") if isinstance(payload, dict) else None
+    return _validate_section(path, PermissionPolicy, permissions or {})
+
+
 def load_routing_config(config_dir: Path | str = DEFAULT_CONFIG_DIR) -> RoutingConfig:
     """Load and validate ``routing.yaml``."""
     path = Path(config_dir) / ROUTING_FILE
@@ -313,4 +341,5 @@ def load_app_config(config_dir: Path | str = DEFAULT_CONFIG_DIR) -> AppConfig:
         gateways=load_gateway_configs(directory),
         routing=load_routing_config(directory),
         applications=load_application_configs(directory),
+        permissions=load_permission_policy(directory),
     )

@@ -19,6 +19,9 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from core.ai_router import AIRouter, DEFAULT_CATEGORY, RoutingError
+from core.task_executor import TaskExecutor
+from core.task_planner import TaskPlanner
+from core.tool_registry import ToolExecutionResult
 from providers.base_adapter import ChatRequest, ChatResponse, ToolSpec
 from providers.errors import ProviderError
 from providers.provider_manager import ProviderManager
@@ -35,21 +38,36 @@ class AssistantReply:
     provider_name: str | None = None
     model: str | None = None
     tool_calls: tuple = ()
+    tool_results: tuple = ()
     errors: list[str] = field(default_factory=list)
     usage: dict[str, int] = field(default_factory=dict)
 
     @property
     def needs_tool_execution(self) -> bool:
-        """True when the model requested tools but none were provided."""
-        return bool(self.tool_calls)
+        """True when tool calls were requested but not executed."""
+        return bool(self.tool_calls) and not self.tool_results
 
 
 class JarvisAssistant:
-    """Provider-independent text conversation with routing and fallback."""
+    """Provider-independent text conversation with routing and fallback.
 
-    def __init__(self, provider_manager: ProviderManager, router: AIRouter) -> None:
+    When a tool registry and executor are provided, model tool calls are
+    planned, approved, executed, and their results fed back to the provider
+    for a final answer (one tool round; orchestration deepens in later
+    phases).
+    """
+
+    def __init__(
+        self,
+        provider_manager: ProviderManager,
+        router: AIRouter,
+        planner: TaskPlanner | None = None,
+        executor: TaskExecutor | None = None,
+    ) -> None:
         self._providers = provider_manager
         self._router = router
+        self._planner = planner
+        self._executor = executor
 
     def handle_text(
         self,
@@ -103,6 +121,11 @@ class JarvisAssistant:
                 logger.warning("provider '%s' failed: %s", provider.name, exc)
                 errors.append(str(exc))
                 continue
+
+            if response.tool_calls and self._planner is not None and self._executor is not None:
+                return self._run_tool_round(
+                    response, plan.candidates, request, errors
+                )
             return self._to_reply(response, errors)
 
         summary = "All configured providers failed to answer this request."
@@ -118,6 +141,85 @@ class JarvisAssistant:
             tool_calls=response.tool_calls,
             errors=errors,
             usage=dict(response.usage),
+        )
+
+    def _run_tool_round(
+        self,
+        response: ChatResponse,
+        candidates,
+        original_request: ChatRequest,
+        errors: list[str],
+    ) -> AssistantReply:
+        """Plan, approve, execute the model's tool calls, then ask the
+        provider for a final answer with the verified results."""
+        plan = self._planner.plan(response.tool_calls)
+        if plan.rejections:
+            logger.info("tool rejections: %s", plan.rejections)
+        executed: list[ToolExecutionResult] = []
+        if plan.tasks:
+            executed = list(self._executor.execute(plan.tasks))
+        else:
+            executed = [
+                ToolExecutionResult(
+                    tool="unknown", success=False, output="; ".join(plan.rejections)
+                )
+            ]
+
+        follow_up = list(original_request.messages)
+        follow_up.append(
+            {
+                "role": "assistant",
+                "content": response.content
+                or f"[requested tools: {', '.join(c.name for c in response.tool_calls)}]",
+            }
+        )
+        follow_up.append(
+            {
+                "role": "user",
+                "content": "Tool execution results (verified locally):\n"
+                + "\n".join(
+                    f"- {r.tool}: {'OK' if r.success else 'FAILED'} - {r.output}"
+                    for r in executed
+                )
+                + "\nUse these verified results to answer.",
+            }
+        )
+
+        retry_request = ChatRequest(
+            messages=follow_up,
+            tools=original_request.tools,
+            temperature=original_request.temperature,
+            max_tokens=original_request.max_tokens,
+            sensitive=original_request.sensitive,
+        )
+        for provider in candidates:
+            try:
+                final = self._providers.chat(provider, retry_request)
+            except ProviderError as exc:
+                errors.append(str(exc))
+                continue
+            return AssistantReply(
+                success=True,
+                text=final.content,
+                provider_name=final.provider_name,
+                model=final.model,
+                tool_calls=response.tool_calls,
+                tool_results=tuple(executed),
+                errors=errors,
+            )
+        # No second round available: report tool results honestly.
+        summary = "Tool results (no provider available for a final summary):\n" + "\n".join(
+            f"- {r.tool}: {'OK' if r.success else 'FAILED'} - {r.output}"
+            for r in executed
+        )
+        return AssistantReply(
+            success=any(r.success for r in executed),
+            text=summary,
+            provider_name=response.provider_name,
+            model=response.model,
+            tool_calls=response.tool_calls,
+            tool_results=tuple(executed),
+            errors=errors,
         )
 
 

@@ -111,6 +111,12 @@ class ChatPanel(ctk.CTkFrame):
         if reply.success:
             content = reply.text or "(empty response)"
             provider_line = f" [{reply.provider_name}]" if reply.provider_name else ""
+            if reply.tool_results:
+                tool_lines = [
+                    f"  - {r.tool}: {'OK' if r.success else 'FAILED'} - {r.output}"
+                    for r in reply.tool_results
+                ]
+                content = "Tool actions:\n" + "\n".join(tool_lines) + "\n\n" + content
             self._store.add_message(
                 self._conversation_id,
                 "assistant",
@@ -118,8 +124,6 @@ class ChatPanel(ctk.CTkFrame):
                 provider=reply.provider_name,
                 model=reply.model,
             )
-            if reply.tool_calls:
-                content += "\n(tool calls requested - execution arrives in Phase 4)"
             if reply.errors:
                 content += f"\n(fallbacks after: {'; '.join(reply.errors)})"
             self.after(0, lambda: self._finish(f"JARVIS{provider_line}: {content}", "ready"))

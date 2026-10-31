@@ -1,9 +1,38 @@
 # JARVIS Project Status
 
-**Current phase:** Phase 3 complete — Memory.
+**Current phase:** Phase 4 complete — Task orchestration and approvals.
 **Date:** 2026-10-31
 
 ## Completed features
+
+### Phase 4 (task orchestration and approvals)
+- **Tool registry** (`core/tool_registry.py`): tools declare risk levels
+  (low/medium/high), argument schemas, and executors; model tool calls are
+  validated against the registry (unknown tools, disabled tools, and bad
+  arguments rejected); provider-neutral tool specs generated for chat.
+- **Built-in tools** (`core/builtin_tools.py`): `open_application` (your
+  registered-app launcher), `search_memory`, `list_applications`,
+  `get_current_time` — all low risk.
+- **Permission checking** (`security/permission_checker.py` +
+  `config/permissions.yaml`): medium/high risk require approval by default;
+  trusted tools may bypass; unknown risk levels are treated conservatively.
+- **Approval management** (`core/approval_manager.py`): approval prompts
+  show the exact action, tool, arguments, and consequences (section 16);
+  handlers are pluggable — CustomTkinter dialog (UI), console prompt, or
+  auto-deny for unattended runs; a crashing handler denies rather than
+  executes.
+- **Audit trail** (`security/audit_logger.py`): JSON-lines log of proposals,
+  approval decisions, executions, and cancellations at
+  `data/audit/audit.log`; every string is secret-redacted before writing.
+- **Task planning and execution** (`core/task_planner.py`,
+  `core/task_executor.py`): validated plan → per-task approval → execution
+  in a bounded worker thread with **timeout** and **cancellation** support;
+  denied tasks are never executed; outcomes are audited.
+- **Assistant tool round**: model tool calls flow through
+  plan → approve → execute → a second provider round with the verified
+  results for the final answer; denied/failed tools are reported honestly.
+- **Approval dialog UI** (`interface/approval_dialog.py`): thread-safe
+  handler marshals prompts to the Tk main thread from executor threads.
 
 ### Phase 3 (memory)
 - **SQLite storage** (`memory/database.py`): durable local database at
@@ -104,14 +133,14 @@ tests/test_assistant.py, tests/test_app_launcher.py
 
 ## Tests passed
 
-- **87 passed, 0 failed** (Phase 2) — superseded; current suite below.
-- **127 passed, 0 failed** (`python -m pytest`, Python 3.14, Windows),
-  including 20 memory tests: persistence across reopen, FTS5 + LIKE
-  search, query escaping, task outcomes, backup/export/deletion.
+- **Tests:** **162 passed, 0 failed** (`python -m pytest`, Python 3.14,
+  Windows), including 46 new Phase 4 tests (permissions, registry,
+  approvals, planner, executor timeout/cancellation, audit redaction,
+  built-in tools, assistant tool round end-to-end with a two-phase stub).
+- Smoke test: app starts, registers 4 built-in tools, memory + FTS5
+  active, idles cleanly.
 - All provider/HTTP interaction is tested with fake sessions — **no real
   network calls, no real API keys** in tests.
-- Smoke test: app starts, creates `data/jarvis.db`, reports
-  `full-text search: FTS5`, idles cleanly.
 
 ## Known limitations (stated honestly)
 
@@ -130,10 +159,16 @@ tests/test_assistant.py, tests/test_app_launcher.py
   assistant honestly reports failure, but user messages are still stored.
 - Tool calls are surfaced, not executed (Phase 4).
 - Public provider endpoints should be re-verified against official docs.
+- **One tool round per message** — chained multi-step tool workflows are a
+  future enhancement.
+- **Audit/memory panels** in the dashboard (viewing audit trail, memory
+  search UI, backup buttons) are not built yet; all controls exist at the
+  code/config level.
+- Windows startup/standby behaviour (Phase 12) not yet implemented.
 
-## Next tasks (Phase 4 — Task orchestration and approvals)
+## Next tasks (Phase 5 — Voice)
 
-1. Tool registry and task planner/executor.
-2. Permission checks and approval dialogs before consequential actions.
-3. Cancellation, timeouts, verification, audit logging.
-4. Memory management UI (history, search, backups) in the dashboard.
+1. Wake-word detection (e.g. Porcupine, licensing permitting).
+2. Speech-to-text (Faster-Whisper) and text-to-speech (Piper/Windows TTS).
+3. Standby/active state transitions, microphone privacy controls.
+4. Manual activation and keyboard shortcut.

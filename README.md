@@ -293,7 +293,12 @@ assistant in one script.
     persistence, FTS5 full-text search (LIKE fallback), backup/export/
     deletion, persistence across restart, and a live memory-backed chat
     panel.
-5.  ⏳ **Early slice done.** Application registry and safe app launcher
+5.  ✅ **Complete (Phase 4).** Tool registry, task planner/executor,
+    permission checks, approval dialogs (UI/console/auto-deny), audit
+    trail with secret redaction, timeouts and cancellation; the assistant
+    now executes model tool calls through plan → approve → execute →
+    verified follow-up.
+6.  ⏳ **Early slice done.** Application registry and safe app launcher
     (`config/applications.yaml`, `automation/app_launcher.py`) — registered
     apps (including PowerShell and Command Prompt) open from their
     configured directories; full desktop automation continues in Phase 6.

@@ -18,16 +18,24 @@ import threading
 import time
 from pathlib import Path
 
+from automation.app_launcher import AppLauncher
 from core.ai_router import AIRouter
+from core.approval_manager import ApprovalManager
 from core.assistant import JarvisAssistant
+from core.builtin_tools import register_builtin_tools
 from core.config_loader import ConfigError, load_app_config
 from core.logging_setup import setup_logging
+from core.task_executor import TaskExecutor
+from core.task_planner import TaskPlanner
+from core.tool_registry import ToolRegistry
 from gateway.gateway_manager import GatewayManager
 from memory.conversation_store import ConversationStore
 from memory.database import MemoryDatabase
 from providers.provider_manager import ProviderManager
 from providers.provider_registry import ProviderRegistry
+from security.audit_logger import AuditLogger
 from security.credential_manager import CredentialManager
+from security.permission_checker import PermissionChecker
 
 logger = logging.getLogger("jarvis.main")
 
@@ -71,7 +79,7 @@ def run() -> int:
         return 2
 
     setup_logging(app_config.settings.logging, project_root=PROJECT_ROOT)
-    logger.info("JARVIS starting (Phase 3: memory-enabled)")
+    logger.info("JARVIS starting (Phase 4: orchestration and approvals)")
 
     credential_manager = CredentialManager()
     registry, gateways = build_registries(app_config, credential_manager)
@@ -82,6 +90,18 @@ def run() -> int:
     data_dir = PROJECT_ROOT / app_config.settings.app.data_dir
     memory_db = MemoryDatabase(data_dir / "jarvis.db")
     memory_store = ConversationStore(memory_db)
+
+    # Tool orchestration (Phase 4): registry -> permissions -> approvals.
+    launcher = AppLauncher.from_config_dir(args.config_dir)
+    tool_registry = ToolRegistry()
+    register_builtin_tools(tool_registry, launcher, memory_store)
+    audit = AuditLogger(data_dir / "audit" / "audit.log")
+    approvals = ApprovalManager(
+        PermissionChecker(app_config.permissions), audit
+    )
+    planner = TaskPlanner(tool_registry)
+    executor = TaskExecutor(tool_registry, approvals, audit)
+    assistant = JarvisAssistant(provider_manager, router, planner, executor)
 
     logger.info(
         "loaded %d provider(s) and %d gateway(s), routing mode '%s', "
@@ -107,6 +127,7 @@ def run() -> int:
 
     try:
         if app_settings.tray_enabled and app_settings.startup_mode in ("tray", "both"):
+            from interface.approval_dialog import UiApprovalHandler
             from interface.system_tray import SystemTray
 
             def open_dashboard() -> None:
@@ -131,6 +152,7 @@ def run() -> int:
                 assistant=assistant,
                 memory_store=memory_store,
             )
+            approvals.set_handler(UiApprovalHandler(dashboard))
             dashboard.run()
 
         # Dashboard-only mode or closed window: keep running for the tray.

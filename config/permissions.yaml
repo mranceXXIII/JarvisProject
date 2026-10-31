@@ -1,0 +1,16 @@
+# JARVIS permission policy (spec sections 9, 16).
+#
+# Risk classification is declared per tool in the tool registry:
+#   low    : reading memory, listing apps, opening registered applications
+#   medium : modifying files/settings, running approved scripts, messages
+#   high   : deletion, purchases, public posting, sharing private data
+#
+# require_approval_medium / require_approval_high: show an approval dialog
+#   before executing such tools (approval-first architecture).
+# trusted_tools: tool names that skip approval entirely. Use sparingly --
+#   a trusted tool executes without asking, every time.
+
+permissions:
+  require_approval_medium: true
+  require_approval_high: true
+  trusted_tools: []
