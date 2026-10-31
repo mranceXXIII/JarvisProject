@@ -67,6 +67,23 @@ class LoggingSettings(BaseModel):
     backup_count: int = Field(default=5, ge=0)
 
 
+class VoiceSettings(BaseModel):
+    """Voice subsystem settings (spec section 7). All engines optional."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    enabled: bool = False
+    wake_phrase: str = "jarvis"
+    wake_credential_ref: str = "jarvis/picovoice-access-key"
+    input_device: Optional[str] = None
+    sample_rate: int = Field(default=16000, gt=0)
+    frame_duration: float = Field(default=0.03, gt=0)
+    inactivity_timeout_seconds: int = Field(default=120, gt=0)
+    stt_model: str = "base"
+    tts_enabled: bool = True
+    tts_rate: int = Field(default=180, gt=50)
+
+
 class Settings(BaseModel):
     """Contents of ``settings.yaml``."""
 
@@ -74,6 +91,7 @@ class Settings(BaseModel):
 
     app: AppSettings = Field(default_factory=AppSettings)
     logging: LoggingSettings = Field(default_factory=LoggingSettings)
+    voice: "VoiceSettings" = Field(default_factory=lambda: VoiceSettings())
 
 
 class ProviderConfig(BaseModel):

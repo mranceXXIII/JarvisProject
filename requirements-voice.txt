@@ -1,0 +1,19 @@
+# JARVIS optional voice dependencies (spec section 7).
+#
+# These are NOT required: JARVIS runs fully in text mode without them.
+# Install only if you want voice features:
+#   python -m pip install -r requirements-voice.txt
+#
+# Notes:
+# - faster-whisper downloads its model on first use (local inference).
+# - pvporcupine requires a Picovoice access key (free tier available,
+#   subject to Picovoice's terms). Store it in the Windows Credential
+#   Manager under "jarvis/picovoice-access-key", e.g.:
+#     python -c "import keyring; keyring.set_password('JARVIS', 'jarvis/picovoice-access-key', 'YOUR_KEY')"
+# - Availability of wheels for Python 3.14 varies; verify before install.
+
+numpy>=2.0
+sounddevice>=0.5
+faster-whisper>=1.0
+pyttsx3>=2.90
+pvporcupine>=3.0

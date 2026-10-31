@@ -298,7 +298,12 @@ assistant in one script.
     trail with secret redaction, timeouts and cancellation; the assistant
     now executes model tool calls through plan → approve → execute →
     verified follow-up.
-6.  ⏳ **Early slice done.** Application registry and safe app launcher
+6.  ✅ **Complete (Phase 5).** Voice architecture: state machine, optional
+    Porcupine wake word, local Faster-Whisper STT, SAPI TTS, mute/pause/
+    emergency-stop controls, dashboard voice panel, Ctrl+Alt+J shortcut.
+    Voice dependencies optional (`requirements-voice.txt`); without them
+    the app runs text-only with honest availability reporting.
+7.  ⏳ **Early slice done.** Application registry and safe app launcher
     (`config/applications.yaml`, `automation/app_launcher.py`) — registered
     apps (including PowerShell and Command Prompt) open from their
     configured directories; full desktop automation continues in Phase 6.

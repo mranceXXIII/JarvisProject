@@ -43,6 +43,7 @@ class Dashboard(ctk.CTk):
         on_quit: Callable[[], None],
         assistant: JarvisAssistant | None = None,
         memory_store: ConversationStore | None = None,
+        voice_pipeline=None,
     ) -> None:
         super().__init__()
         self._config = app_config
@@ -51,6 +52,7 @@ class Dashboard(ctk.CTk):
         self._provider_manager = provider_manager
         self._assistant = assistant
         self._memory_store = memory_store
+        self._voice_pipeline = voice_pipeline
         self._on_quit = on_quit
 
         self.title(WINDOW_TITLE)
@@ -58,7 +60,13 @@ class Dashboard(ctk.CTk):
         self.protocol("WM_DELETE_WINDOW", self._hide)
 
         self._build_layout()
+        self.bind("<Control-Alt-j>", lambda _e: self._voice_hotkey())
         logger.info("dashboard initialized")
+
+    def _voice_hotkey(self) -> None:
+        """In-app shortcut: Ctrl+Alt+J activates voice (spec section 7)."""
+        if self._voice_pipeline is not None:
+            self._voice_pipeline.activate_manual()
 
     def _build_layout(self) -> None:
         self.grid_columnconfigure(0, weight=1)
@@ -95,7 +103,7 @@ class Dashboard(ctk.CTk):
 
     def _build_home(self, tab) -> None:
         tab.grid_columnconfigure(0, weight=1)
-        tab.grid_rowconfigure(1, weight=1)
+        tab.grid_rowconfigure(2, weight=1)
 
         header = ctk.CTkFrame(tab)
         header.grid(row=0, column=0, sticky="ew", padx=6, pady=6)
@@ -105,8 +113,15 @@ class Dashboard(ctk.CTk):
             font=ctk.CTkFont(size=22, weight="bold"),
         ).pack(side="left", padx=12, pady=10)
 
+        if self._voice_pipeline is not None:
+            from interface.voice_panel import VoicePanel
+
+            VoicePanel(tab, self._voice_pipeline, on_status=self._set_status).grid(
+                row=1, column=0, sticky="ew", padx=6, pady=6
+            )
+
         providers_frame = ctk.CTkFrame(tab)
-        providers_frame.grid(row=1, column=0, sticky="nsew", padx=6, pady=6)
+        providers_frame.grid(row=2, column=0, sticky="nsew", padx=6, pady=6)
         ctk.CTkLabel(
             providers_frame,
             text="Configured providers (details under 'API & Gateway')",

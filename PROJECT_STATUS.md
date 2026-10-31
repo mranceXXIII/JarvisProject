@@ -1,9 +1,34 @@
 # JARVIS Project Status
 
-**Current phase:** Phase 4 complete — Task orchestration and approvals.
+**Current phase:** Phase 5 complete — Voice (architecture; engines optional).
 **Date:** 2026-10-31
 
 ## Completed features
+
+### Phase 5 (voice)
+- **Voice state machine** (`core/state_manager.py`): validated, thread-safe
+  transitions between STANDBY / ACTIVE / PROCESSING / SPEAKING / MUTED /
+  PAUSED / STOPPED; illegal transitions rejected.
+- **Microphone** (`voice/microphone.py`): optional sounddevice capture with
+  silence detection; **muted/paused states capture zero audio** (privacy).
+- **Speech-to-text** (`voice/speech_to_text.py`): Faster-Whisper engine,
+  **local inference only** (audio never uploaded), lazy model load,
+  honest availability reporting.
+- **Text-to-speech** (`voice/text_to_speech.py`): Windows SAPI via pyttsx3
+  (optional), per-utterance engine instances for thread safety.
+- **Wake word** (`voice/wake_word.py`): Picovoice Porcupine engine (local
+  standby detection) using an access key from the secure credential store;
+  when unavailable, JARVIS degrades to **manual/text activation only**,
+  stated honestly (never faked listening).
+- **Voice pipeline** (`voice/pipeline.py`): activate → record → transcribe →
+  command callback (full assistant + tools) → speak reply → standby;
+  mute / pause / resume / **emergency stop** / restart controls;
+  activation is refused while muted or paused (privacy-first).
+- **Dashboard voice panel** (`interface/voice_panel.py`): live state display
+  with per-engine availability, Activate / Mute / Pause / Emergency-stop
+  buttons; in-app shortcut Ctrl+Alt+J.
+- Voice dependencies are fully optional (`requirements-voice.txt`); without
+  them JARVIS remains 100% functional in text mode.
 
 ### Phase 4 (task orchestration and approvals)
 - **Tool registry** (`core/tool_registry.py`): tools declare risk levels
@@ -133,12 +158,13 @@ tests/test_assistant.py, tests/test_app_launcher.py
 
 ## Tests passed
 
-- **Tests:** **162 passed, 0 failed** (`python -m pytest`, Python 3.14,
-  Windows), including 46 new Phase 4 tests (permissions, registry,
-  approvals, planner, executor timeout/cancellation, audit redaction,
-  built-in tools, assistant tool round end-to-end with a two-phase stub).
-- Smoke test: app starts, registers 4 built-in tools, memory + FTS5
-  active, idles cleanly.
+- **Tests:** **180 passed, 0 failed** (`python -m pytest`, Python 3.14,
+  Windows), including 18 new voice tests: state machine transitions,
+  full pipeline flow with fake engines, mute/pause privacy behaviour,
+  emergency stop, honest status reporting, availability probes.
+- Smoke test: app starts cleanly with voice disabled; engine availability
+  detection verified (all engines honestly `unavailable` without
+  requirements-voice.txt installed).
 - All provider/HTTP interaction is tested with fake sessions — **no real
   network calls, no real API keys** in tests.
 
@@ -161,14 +187,27 @@ tests/test_assistant.py, tests/test_app_launcher.py
 - Public provider endpoints should be re-verified against official docs.
 - **One tool round per message** — chained multi-step tool workflows are a
   future enhancement.
+- **Voice engines not yet exercised on real hardware**: this machine lacks
+  the optional voice dependencies, so microphone/STT/TTS/wake-word are
+  architecturally complete and unit-tested with fakes but **not yet verified
+  with a real microphone or speaker** (acceptance criterion 3 stays open
+  until deps are installed and tested on target hardware).
+- **Wake word requires a Picovoice access key** (free tier, subject to
+  Picovoice terms); without it, activation is manual/text only - stated
+  honestly, never faked.
+- **No global hotkey yet**: Ctrl+Alt+J works inside the dashboard only
+  (global hotkeys need another dependency; Phase 12 polish).
+- **Inactivity timeout setting is stored but not yet enforced as an
+  auto-return timer** in the pipeline loop (each command already returns
+  to standby on completion).
 - **Audit/memory panels** in the dashboard (viewing audit trail, memory
   search UI, backup buttons) are not built yet; all controls exist at the
   code/config level.
 - Windows startup/standby behaviour (Phase 12) not yet implemented.
 
-## Next tasks (Phase 5 — Voice)
+## Next tasks (Phase 6 — Desktop automation)
 
-1. Wake-word detection (e.g. Porcupine, licensing permitting).
-2. Speech-to-text (Faster-Whisper) and text-to-speech (Piper/Windows TTS).
-3. Standby/active state transitions, microphone privacy controls.
-4. Manual activation and keyboard shortcut.
+1. Window management (list, switch, minimize, maximize) via PyWinAuto.
+2. File operations with permission checks (medium risk).
+3. Safe command runner with strict allowlists and approvals (high risk).
+4. More registered-app tooling: close/switch apps, screenshots on request.

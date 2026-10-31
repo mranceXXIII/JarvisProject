@@ -13,5 +13,20 @@ app:
 logging:
   level: INFO
   file: logs/jarvis.log
-  max_bytes: 1048576      # 1 MiB per log file before rotation
+  max_bytes: 1048576
   backup_count: 5
+
+voice:
+  # Voice features are OPTIONAL. Engines load lazily; if a dependency
+  # (sounddevice, faster-whisper, pyttsx3, pvporcupine) is missing, that
+  # engine reports "unavailable" and JARVIS stays usable in text mode.
+  enabled: false
+  wake_phrase: jarvis
+  wake_credential_ref: jarvis/picovoice-access-key
+  input_device: null
+  sample_rate: 16000
+  frame_duration: 0.03
+  inactivity_timeout_seconds: 120
+  stt_model: base
+  tts_enabled: true
+  tts_rate: 180

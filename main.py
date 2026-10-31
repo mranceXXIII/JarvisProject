@@ -79,7 +79,7 @@ def run() -> int:
         return 2
 
     setup_logging(app_config.settings.logging, project_root=PROJECT_ROOT)
-    logger.info("JARVIS starting (Phase 4: orchestration and approvals)")
+    logger.info("JARVIS starting (Phase 5: voice architecture ready)")
 
     credential_manager = CredentialManager()
     registry, gateways = build_registries(app_config, credential_manager)
@@ -102,6 +102,23 @@ def run() -> int:
     planner = TaskPlanner(tool_registry)
     executor = TaskExecutor(tool_registry, approvals, audit)
     assistant = JarvisAssistant(provider_manager, router, planner, executor)
+
+    # Voice (Phase 5): optional; engines degrade honestly when unavailable.
+    voice_pipeline = None
+    if app_config.settings.voice.enabled:
+
+        def handle_voice_command(text: str) -> str:
+            reply = assistant.handle_text(
+                text, tools=tool_registry.to_tool_specs()
+            )
+            return reply.text
+
+        from voice.pipeline import VoicePipeline
+
+        voice_pipeline = VoicePipeline.from_config(
+            app_config.settings.voice, credential_manager, handle_voice_command
+        )
+        voice_pipeline.start()
 
     logger.info(
         "loaded %d provider(s) and %d gateway(s), routing mode '%s', "
@@ -151,6 +168,7 @@ def run() -> int:
                 on_quit=request_quit,
                 assistant=assistant,
                 memory_store=memory_store,
+                voice_pipeline=voice_pipeline,
             )
             approvals.set_handler(UiApprovalHandler(dashboard))
             dashboard.run()
@@ -159,6 +177,8 @@ def run() -> int:
         while not quit_event.is_set() and tray is not None:
             time.sleep(0.2)
     finally:
+        if voice_pipeline is not None:
+            voice_pipeline.stop()
         if tray is not None:
             tray.stop()
         logger.info("JARVIS shut down cleanly")
