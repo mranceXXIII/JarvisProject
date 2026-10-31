@@ -1,9 +1,30 @@
 # JARVIS Project Status
 
-**Current phase:** Phase 2 complete — API manager and AI brain.
+**Current phase:** Phase 3 complete — Memory.
 **Date:** 2026-10-31
 
 ## Completed features
+
+### Phase 3 (memory)
+- **SQLite storage** (`memory/database.py`): durable local database at
+  `data/jarvis.db` with WAL journaling, foreign keys, per-operation
+  connections (safe across UI/background threads), schema versioning.
+- **Conversation persistence** (`memory/conversation_store.py`):
+  conversations, messages (with provider/model attribution per reply),
+  and task outcomes are committed before success is reported.
+- **Full-text search**: SQLite FTS5 with triggers keeping the index in
+  sync (verified available on this machine), and a LIKE fallback with
+  wildcard escaping for SQLite builds without FTS5. Search queries are
+  escaped so user input cannot inject FTS syntax.
+- **Backup/export/deletion** (`memory/backup.py` + store methods):
+  timestamped consistent backups via the SQLite backup API, JSON export,
+  per-conversation deletion (FTS index stays consistent), and full purge.
+- **Persistence across restart verified** by tests that close and reopen
+  the database file.
+- **Live chat panel** (`interface/chat_panel.py`): dashboard chat now
+  works — messages persist through the assistant, history is shown,
+  assistant calls run on a background thread, per-conversation context is
+  sent to providers.
 
 ### Phase 1 (foundation)
 - Validated configuration loading (`core/config_loader.py`): Pydantic
@@ -83,11 +104,14 @@ tests/test_assistant.py, tests/test_app_launcher.py
 
 ## Tests passed
 
-- **87 passed, 0 failed** (`python -m pytest`, Python 3.14, Windows).
+- **87 passed, 0 failed** (Phase 2) — superseded; current suite below.
+- **127 passed, 0 failed** (`python -m pytest`, Python 3.14, Windows),
+  including 20 memory tests: persistence across reopen, FTS5 + LIKE
+  search, query escaping, task outcomes, backup/export/deletion.
 - All provider/HTTP interaction is tested with fake sessions — **no real
-  network calls, no real API keys, no real emails** in tests.
-- Smoke test: `python main.py --headless` starts, loads providers/gateways
-  and routing mode, idles cleanly.
+  network calls, no real API keys** in tests.
+- Smoke test: app starts, creates `data/jarvis.db`, reports
+  `full-text search: FTS5`, idles cleanly.
 
 ## Known limitations (stated honestly)
 
@@ -98,25 +122,18 @@ tests/test_assistant.py, tests/test_app_launcher.py
 - The launcher is not yet reachable from chat/voice (needs Phases 3-4:
   memory, orchestration, approvals).
 
-- **No streaming** and no structured-output enforcement yet; adapters
-  declare those capabilities conservatively.
-- **Provider endpoints are pinned to current public URLs** in
-  `PROVIDER_TYPE_DEFAULTS` and should be re-verified against each provider's
-  official documentation before production use; users can override
-  `base_url`/`endpoint_path` per provider.
-- **Tool calls are surfaced, not executed.** Execution, permission checks,
-  and approval dialogs arrive in Phase 4.
-- **Chat UI is not wired yet.** The assistant API exists and is tested; the
-  dashboard chat panel connects once memory (Phase 3) is available to
-  persist conversations.
-- **No API-key input UI yet.** Store keys in Windows Credential Manager
-  manually (e.g. `keyring set JARVIS jarvis/<ref>`) until the settings UI
-  adds credential entry.
-- Memory/persistence still pending (Phase 3).
+- **No semantic/vector retrieval yet.** Search is lexical (FTS5/LIKE);
+  embeddings arrive as the optional enhancement of this phase.
+- **Backup/export are code-level only** — no dashboard buttons yet (a
+  Memory management panel is planned with the Phase 4 UI work).
+- **Chat requires an enabled provider** to answer; without one the
+  assistant honestly reports failure, but user messages are still stored.
+- Tool calls are surfaced, not executed (Phase 4).
+- Public provider endpoints should be re-verified against official docs.
 
-## Next tasks (Phase 3 — Memory)
+## Next tasks (Phase 4 — Task orchestration and approvals)
 
-1. SQLite storage of conversations, task outcomes, and metadata.
-2. Full-text search; optional semantic retrieval.
-3. Backup/export/deletion controls; persistence verified after restart.
-4. Wire chat panel through the assistant with conversation persistence.
+1. Tool registry and task planner/executor.
+2. Permission checks and approval dialogs before consequential actions.
+3. Cancellation, timeouts, verification, audit logging.
+4. Memory management UI (history, search, backups) in the dashboard.

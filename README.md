@@ -289,7 +289,11 @@ assistant in one script.
     Ollama, Gemini, Anthropic), gateway routing, connection testing,
     capability registry, cloud/local/hybrid routing with fallback, text
     conversation and tool calling at the AI layer.
-3.  ⏳ **Early slice done.** Application registry and safe app launcher
+4.  ✅ **Complete (Phase 3).** SQLite memory: conversation/message/task
+    persistence, FTS5 full-text search (LIKE fallback), backup/export/
+    deletion, persistence across restart, and a live memory-backed chat
+    panel.
+5.  ⏳ **Early slice done.** Application registry and safe app launcher
     (`config/applications.yaml`, `automation/app_launcher.py`) — registered
     apps (including PowerShell and Command Prompt) open from their
     configured directories; full desktop automation continues in Phase 6.

@@ -23,6 +23,8 @@ from core.assistant import JarvisAssistant
 from core.config_loader import ConfigError, load_app_config
 from core.logging_setup import setup_logging
 from gateway.gateway_manager import GatewayManager
+from memory.conversation_store import ConversationStore
+from memory.database import MemoryDatabase
 from providers.provider_manager import ProviderManager
 from providers.provider_registry import ProviderRegistry
 from security.credential_manager import CredentialManager
@@ -69,18 +71,26 @@ def run() -> int:
         return 2
 
     setup_logging(app_config.settings.logging, project_root=PROJECT_ROOT)
-    logger.info("JARVIS starting (Phase 2: API manager and AI brain)")
+    logger.info("JARVIS starting (Phase 3: memory-enabled)")
 
     credential_manager = CredentialManager()
     registry, gateways = build_registries(app_config, credential_manager)
     provider_manager = ProviderManager(credential_manager, gateways)
     router = AIRouter.from_config(app_config.routing, app_config.providers, provider_manager)
     assistant = JarvisAssistant(provider_manager, router)
+
+    data_dir = PROJECT_ROOT / app_config.settings.app.data_dir
+    memory_db = MemoryDatabase(data_dir / "jarvis.db")
+    memory_store = ConversationStore(memory_db)
+
     logger.info(
-        "loaded %d provider(s) and %d gateway(s), routing mode '%s'",
+        "loaded %d provider(s) and %d gateway(s), routing mode '%s', "
+        "memory at %s (FTS: %s)",
         len(registry.list_providers()),
         len(gateways.list_gateways()),
         app_config.routing.settings.mode,
+        memory_db.path,
+        memory_store.full_text_search_enabled,
     )
 
     if args.headless:
@@ -118,6 +128,8 @@ def run() -> int:
                 gateways=gateways,
                 provider_manager=provider_manager,
                 on_quit=request_quit,
+                assistant=assistant,
+                memory_store=memory_store,
             )
             dashboard.run()
 

@@ -17,8 +17,10 @@ from typing import Callable
 
 import customtkinter as ctk
 
+from core.assistant import JarvisAssistant
 from core.config_loader import AppConfig
 from gateway.gateway_manager import GatewayManager
+from memory.conversation_store import ConversationStore
 from providers.provider_manager import ProviderManager
 from providers.provider_registry import ProviderRegistry
 
@@ -39,12 +41,16 @@ class Dashboard(ctk.CTk):
         gateways: GatewayManager,
         provider_manager: ProviderManager,
         on_quit: Callable[[], None],
+        assistant: JarvisAssistant | None = None,
+        memory_store: ConversationStore | None = None,
     ) -> None:
         super().__init__()
         self._config = app_config
         self._registry = registry
         self._gateways = gateways
         self._provider_manager = provider_manager
+        self._assistant = assistant
+        self._memory_store = memory_store
         self._on_quit = on_quit
 
         self.title(WINDOW_TITLE)
@@ -67,6 +73,11 @@ class Dashboard(ctk.CTk):
         self.api_panel = _build_api_panel(
             settings_tab, self._provider_manager, self._config
         )
+        if self._assistant is not None and self._memory_store is not None:
+            self.chat_panel = _build_chat_panel(
+                home_tab, self._assistant, self._memory_store,
+                on_status=self._set_status,
+            )
 
         footer = ctk.CTkFrame(self, fg_color="transparent")
         footer.grid(row=1, column=0, padx=12, pady=(0, 12), sticky="ew")
@@ -78,6 +89,9 @@ class Dashboard(ctk.CTk):
         ctk.CTkButton(
             footer, text="Quit JARVIS", command=self._quit, fg_color="#B23A3A"
         ).pack(side="right", padx=6)
+
+    def _set_status(self, text: str) -> None:
+        self.status_label.configure(text=text)
 
     def _build_home(self, tab) -> None:
         tab.grid_columnconfigure(0, weight=1)
@@ -102,18 +116,24 @@ class Dashboard(ctk.CTk):
         self.providers_text.pack(fill="both", expand=True, padx=10, pady=(2, 10))
         self._refresh_providers()
 
-        chat_frame = ctk.CTkFrame(tab)
-        chat_frame.grid(row=2, column=0, sticky="ew", padx=6, pady=6)
-        ctk.CTkLabel(
-            chat_frame,
-            text="Chat (arrives with memory + approvals in Phases 3-4)",
-            font=ctk.CTkFont(weight="bold"),
-        ).pack(anchor="w", padx=10, pady=(8, 2))
-        self.chat_entry = ctk.CTkEntry(
-            chat_frame, placeholder_text="Text chat is wired in a later phase"
-        )
-        self.chat_entry.configure(state="disabled")
-        self.chat_entry.pack(fill="x", padx=10, pady=(2, 10))
+        if self._assistant is not None and self._memory_store is not None:
+            self.chat_panel = _build_chat_panel(
+                home_tab,
+                self._assistant,
+                self._memory_store,
+                on_status=self._set_status,
+            )
+        else:
+            chat_frame = ctk.CTkFrame(tab)
+            chat_frame.grid(row=2, column=0, sticky="ew", padx=6, pady=6)
+            ctk.CTkLabel(
+                chat_frame,
+                text="Chat unavailable (memory not initialized)",
+                font=ctk.CTkFont(weight="bold"),
+            ).pack(anchor="w", padx=10, pady=(8, 2))
+            self.chat_entry = ctk.CTkEntry(chat_frame)
+            self.chat_entry.configure(state="disabled")
+            self.chat_entry.pack(fill="x", padx=10, pady=(2, 10))
 
     def _refresh_providers(self) -> None:
         providers = self._registry.list_providers()
@@ -162,4 +182,23 @@ def _build_api_panel(tab, provider_manager: ProviderManager, app_config: AppConf
     panel.grid(row=0, column=0, sticky="nsew", padx=6, pady=6)
     tab.grid_rowconfigure(0, weight=1)
     tab.grid_columnconfigure(0, weight=1)
+    return panel
+
+
+def _build_chat_panel(
+    tab,
+    assistant: JarvisAssistant,
+    store: ConversationStore,
+    on_status=None,
+):
+    """Construct the live chat panel inside the Home tab."""
+    from interface.chat_panel import ChatPanel
+
+    panel = ChatPanel(
+        master=tab,
+        assistant=assistant,
+        store=store,
+        on_activity=on_status,
+    )
+    panel.grid(row=2, column=0, sticky="nsew", padx=6, pady=6)
     return panel
