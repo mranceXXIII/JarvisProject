@@ -285,6 +285,10 @@ assistant in one script.
 1.  ✅ **Complete (Phase 1).** Project foundation, settings, logging,
     application entry point. See
     [`PROJECT_STATUS.md`](PROJECT_STATUS.md) for details and limitations.
+2.  ✅ **Complete (Phase 2).** Provider adapters (OpenAI-compatible,
+    Ollama, Gemini, Anthropic), gateway routing, connection testing,
+    capability registry, cloud/local/hybrid routing with fallback, text
+    conversation and tool calling at the AI layer.
 2.  Universal provider and gateway manager.
 3.  AI conversation interface and provider routing.
 4.  SQLite memory and retrieval.

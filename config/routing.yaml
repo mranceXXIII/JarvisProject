@@ -1,0 +1,28 @@
+# JARVIS AI routing configuration (Phase 2).
+#
+# mode: cloud_only | local_only | hybrid
+#   cloud_only : only non-local providers may serve requests
+#   local_only : only local runtimes (Ollama, LM Studio) may serve requests
+#   hybrid     : the routed provider first, then the fallback chain
+#
+# routes map a task category to the preferred provider name (must match a
+# provider in providers.yaml). Categories not listed use "default".
+#
+# fallback_chain: providers to try, in order, when the routed provider fails.
+# Fallback is capability-filtered and never silently moves sensitive content
+# to a different external provider (see core/ai_router.py).
+
+settings:
+  mode: hybrid
+
+default:
+  provider: "Local Ollama"
+
+routes: {}
+
+fallback_chain:
+  - "Local Ollama"
+
+# When true, a failed sensitive request may fall back to a LOCAL provider
+# only. External providers are never used for sensitive fallbacks.
+sensitive_fallback_local_only: true

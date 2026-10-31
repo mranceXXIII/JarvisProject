@@ -132,6 +132,52 @@ class AppConfig(BaseModel):
     settings: Settings
     providers: tuple[ProviderConfig, ...] = ()
     gateways: tuple[GatewayConfig, ...] = ()
+    routing: "RoutingConfig" = Field(default_factory=lambda: RoutingConfig())
+
+
+class RoutingSettings(BaseModel):
+    """AI routing mode settings."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    mode: Literal["cloud_only", "local_only", "hybrid"] = "hybrid"
+
+
+class RouteEntry(BaseModel):
+    """A task-category route to a provider."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    provider: str = Field(min_length=1)
+
+
+class RoutingConfig(BaseModel):
+    """Contents of ``routing.yaml``."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    settings: RoutingSettings = Field(default_factory=RoutingSettings)
+    default: RouteEntry | None = None
+    routes: dict[str, RouteEntry] = Field(default_factory=dict)
+    fallback_chain: list[str] = Field(default_factory=list)
+    sensitive_fallback_local_only: bool = True
+
+    @field_validator("routes", mode="before")
+    @classmethod
+    def _coerce_routes(cls, value: Any) -> Any:
+        # Accept the simple YAML form:  category: {provider: name}
+        return value or {}
+
+
+ROUTING_FILE = "routing.yaml"
+
+
+def load_routing_config(config_dir: Path | str = DEFAULT_CONFIG_DIR) -> RoutingConfig:
+    """Load and validate ``routing.yaml``."""
+    path = Path(config_dir) / ROUTING_FILE
+    if not path.exists():
+        return RoutingConfig()
+    return _validate_section(path, RoutingConfig, _read_yaml(path))
 
 
 def _read_yaml(path: Path) -> Any:
@@ -196,4 +242,5 @@ def load_app_config(config_dir: Path | str = DEFAULT_CONFIG_DIR) -> AppConfig:
         settings=load_settings(directory),
         providers=load_provider_configs(directory),
         gateways=load_gateway_configs(directory),
+        routing=load_routing_config(directory),
     )
