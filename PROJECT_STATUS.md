@@ -1,9 +1,31 @@
 # JARVIS Project Status
 
-**Current phase:** Phase 5 complete — Voice (architecture; engines optional).
-**Date:** 2026-10-31
+**Current phase:** Phase 6 complete — Desktop automation.
+**Date:** 2026-11-01
 
 ## Completed features
+
+### Phase 6 (desktop automation)
+- **Window management** (`automation/window_manager.py`): list, activate,
+  minimize, maximize, restore, and close desktop windows via Win32 APIs
+  (ctypes - no new dependency); injectable API layer for tests;
+  case-insensitive title-substring addressing. Live-verified on Windows.
+- **Contained file operations** (`automation/file_manager.py`): all paths
+  must resolve inside configured allowed roots (`permissions.yaml` →
+  `file_access.allowed_roots`, default Documents/Desktop/Downloads) - path
+  traversal outside the roots is refused regardless of approval; reads are
+  size-capped, listings entry-capped.
+- **Allowlisted command runner** (`automation/command_runner.py`): only
+  allowlisted executables run (`permissions.yaml` →
+  `command_runner.allowed_executables`, default ipconfig/ping/systeminfo);
+  argv-only with `shell=False`, forbidden shell characters rejected,
+  timeout + output cap; paths as executables refused.
+- **11 new tools** (`core/automation_tools.py`) with spec-correct risk
+  levels: list/activate/minimize/maximize/restore windows (low),
+  close_window (medium), list_directory/read_file (low), write_file/
+  move_file/copy_file (medium), delete_file (high), run_command (high),
+  take_screenshot (low, saved to `data/generated/`). High/medium tools
+  automatically trigger the Phase 4 approval dialog; all actions audited.
 
 ### Phase 5 (voice)
 - **Voice state machine** (`core/state_manager.py`): validated, thread-safe
@@ -158,13 +180,15 @@ tests/test_assistant.py, tests/test_app_launcher.py
 
 ## Tests passed
 
-- **Tests:** **180 passed, 0 failed** (`python -m pytest`, Python 3.14,
-  Windows), including 18 new voice tests: state machine transitions,
-  full pipeline flow with fake engines, mute/pause privacy behaviour,
-  emergency stop, honest status reporting, availability probes.
-- Smoke test: app starts cleanly with voice disabled; engine availability
-  detection verified (all engines honestly `unavailable` without
-  requirements-voice.txt installed).
+- **Tests:** **203 passed, 0 failed** (`python -m pytest`, Python 3.14,
+  Windows), including 23 new Phase 6 tests (window manager with a fake
+  Win32 API, file containment/traversal/limits, command allowlist and
+  output caps, tool registration risk levels, high-risk approval gating).
+- **Live verification:** real Win32 window enumeration works on this
+  machine (lists actual open windows); app starts headless with all
+  automation tools registered (windows/files/commands all available).
+- All provider/HTTP interaction uses fake sessions — **no real network
+  calls, no real API keys, no real deletions** in tests.
 - All provider/HTTP interaction is tested with fake sessions — **no real
   network calls, no real API keys** in tests.
 
@@ -200,14 +224,17 @@ tests/test_assistant.py, tests/test_app_launcher.py
 - **Inactivity timeout setting is stored but not yet enforced as an
   auto-return timer** in the pipeline loop (each command already returns
   to standby on completion).
+- **File tools are text-oriented** (no binary file handling yet); window
+  control addresses windows by title only (no per-process targeting).
 - **Audit/memory panels** in the dashboard (viewing audit trail, memory
   search UI, backup buttons) are not built yet; all controls exist at the
   code/config level.
 - Windows startup/standby behaviour (Phase 12) not yet implemented.
 
-## Next tasks (Phase 6 — Desktop automation)
+## Next tasks (Phase 7 — Browser automation and web research)
 
-1. Window management (list, switch, minimize, maximize) via PyWinAuto.
-2. File operations with permission checks (medium risk).
-3. Safe command runner with strict allowlists and approvals (high risk).
-4. More registered-app tooling: close/switch apps, screenshots on request.
+1. Playwright-based browser sessions (optional dependency).
+2. Web search via a configured provider/API.
+3. Webpage text extraction with source-URL tracking (untrusted-content
+   handling: page text is data, never instructions).
+4. Sourced research summaries saved to memory.

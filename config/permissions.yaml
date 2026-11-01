@@ -14,3 +14,18 @@ permissions:
   require_approval_medium: true
   require_approval_high: true
   trusted_tools: []
+
+# File tools may only touch paths inside these roots (expanded with ~).
+# Paths outside them are refused regardless of approval.
+file_access:
+  allowed_roots: ["~/Documents", "~/Desktop", "~/Downloads"]
+  max_read_bytes: 1048576
+  max_list_entries: 200
+
+# Command runner: high-risk tool with a strict allowlist. Only these
+# executables can ever run, always without a shell, with a timeout and an
+# output cap. Extend deliberately.
+command_runner:
+  allowed_executables: ["ipconfig", "ping", "systeminfo"]
+  timeout_seconds: 30
+  max_output_chars: 4000

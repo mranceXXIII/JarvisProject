@@ -79,7 +79,7 @@ def run() -> int:
         return 2
 
     setup_logging(app_config.settings.logging, project_root=PROJECT_ROOT)
-    logger.info("JARVIS starting (Phase 5: voice architecture ready)")
+    logger.info("JARVIS starting (Phase 6: desktop automation enabled)")
 
     credential_manager = CredentialManager()
     registry, gateways = build_registries(app_config, credential_manager)
@@ -95,6 +95,24 @@ def run() -> int:
     launcher = AppLauncher.from_config_dir(args.config_dir)
     tool_registry = ToolRegistry()
     register_builtin_tools(tool_registry, launcher, memory_store)
+
+    # Desktop automation (Phase 6): windows, files, commands, screenshots.
+    from automation.command_runner import CommandRunner
+    from automation.file_manager import FileManager
+    from automation.window_manager import WindowManager
+    from core.automation_tools import register_automation_tools
+
+    window_manager = WindowManager()
+    file_manager = FileManager(app_config.file_access)
+    command_runner = CommandRunner(app_config.command_runner)
+    register_automation_tools(
+        tool_registry,
+        window_manager,
+        file_manager,
+        command_runner,
+        data_dir / "generated",
+    )
+
     audit = AuditLogger(data_dir / "audit" / "audit.log")
     approvals = ApprovalManager(
         PermissionChecker(app_config.permissions), audit

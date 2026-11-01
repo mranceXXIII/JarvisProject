@@ -163,6 +163,10 @@ class AppConfig(BaseModel):
     permissions: "PermissionPolicy" = Field(
         default_factory=lambda: PermissionPolicy()
     )
+    file_access: "FileAccessConfig" = Field(default_factory=lambda: FileAccessConfig())
+    command_runner: "CommandRunnerConfig" = Field(
+        default_factory=lambda: CommandRunnerConfig()
+    )
 
 
 class RoutingSettings(BaseModel):
@@ -272,19 +276,69 @@ class PermissionPolicy(BaseModel):
     trusted_tools: list[str] = Field(default_factory=list)
 
 
+class FileAccessConfig(BaseModel):
+    """File-tool containment rules (spec section 9)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    allowed_roots: list[str] = Field(
+        default_factory=lambda: ["~/Documents", "~/Desktop", "~/Downloads"]
+    )
+    max_read_bytes: int = Field(default=1_048_576, gt=0)
+    max_list_entries: int = Field(default=200, gt=0)
+
+
+class CommandRunnerConfig(BaseModel):
+    """Command allowlist rules (spec section 9)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    allowed_executables: list[str] = Field(
+        default_factory=lambda: ["ipconfig", "ping", "systeminfo"]
+    )
+    timeout_seconds: int = Field(default=30, gt=0)
+    max_output_chars: int = Field(default=4000, gt=0)
+
+
+class SecurityConfig(BaseModel):
+    """All security-related settings from ``permissions.yaml``."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    policy: PermissionPolicy = Field(default_factory=PermissionPolicy)
+    file_access: FileAccessConfig = Field(default_factory=FileAccessConfig)
+    command_runner: CommandRunnerConfig = Field(default_factory=CommandRunnerConfig)
+
+
 PERMISSIONS_FILE = "permissions.yaml"
+
+
+def load_security_config(
+    config_dir: Path | str = DEFAULT_CONFIG_DIR,
+) -> SecurityConfig:
+    """Load and validate the security bundle in ``permissions.yaml``."""
+    path = Path(config_dir) / PERMISSIONS_FILE
+    if not path.exists():
+        return SecurityConfig()
+    payload = _read_yaml(path) or {}
+    if not isinstance(payload, dict):
+        return SecurityConfig()
+    return _validate_section(
+        path,
+        SecurityConfig,
+        {
+            "policy": payload.get("permissions") or {},
+            "file_access": payload.get("file_access") or {},
+            "command_runner": payload.get("command_runner") or {},
+        },
+    )
 
 
 def load_permission_policy(
     config_dir: Path | str = DEFAULT_CONFIG_DIR,
 ) -> PermissionPolicy:
-    """Load and validate ``permissions.yaml`` (defaults when missing)."""
-    path = Path(config_dir) / PERMISSIONS_FILE
-    if not path.exists():
-        return PermissionPolicy()
-    payload = _read_yaml(path) or {}
-    permissions = payload.get("permissions") if isinstance(payload, dict) else None
-    return _validate_section(path, PermissionPolicy, permissions or {})
+    """Backward-compatible loader for the approval policy only."""
+    return load_security_config(config_dir).policy
 
 
 def load_routing_config(config_dir: Path | str = DEFAULT_CONFIG_DIR) -> RoutingConfig:
@@ -360,4 +414,6 @@ def load_app_config(config_dir: Path | str = DEFAULT_CONFIG_DIR) -> AppConfig:
         routing=load_routing_config(directory),
         applications=load_application_configs(directory),
         permissions=load_permission_policy(directory),
+        file_access=load_security_config(directory).file_access,
+        command_runner=load_security_config(directory).command_runner,
     )

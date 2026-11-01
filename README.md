@@ -303,10 +303,14 @@ assistant in one script.
     emergency-stop controls, dashboard voice panel, Ctrl+Alt+J shortcut.
     Voice dependencies optional (`requirements-voice.txt`); without them
     the app runs text-only with honest availability reporting.
-7.  ⏳ **Early slice done.** Application registry and safe app launcher
+7.  ✅ **Complete (Phase 6).** Desktop automation: window management
+    (Win32/ctypes), contained file operations (allowed-roots policy),
+    allowlisted command runner (no shell), screenshot capture - 11 new
+    tools wired through the Phase 4 risk/approval/audit system.
+8.  ⏳ **Early slice done.** Application registry and safe app launcher
     (`config/applications.yaml`, `automation/app_launcher.py`) — registered
     apps (including PowerShell and Command Prompt) open from their
-    configured directories; full desktop automation continues in Phase 6.
+    configured directories.
 2.  Universal provider and gateway manager.
 3.  AI conversation interface and provider routing.
 4.  SQLite memory and retrieval.
