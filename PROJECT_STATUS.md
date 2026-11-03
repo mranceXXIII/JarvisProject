@@ -1,9 +1,30 @@
 # JARVIS Project Status
 
-**Current phase:** Phase 6 complete — Desktop automation.
+**Current phase:** Phase 7 complete — Browser automation and web research.
 **Date:** 2026-11-01
 
 ## Completed features
+
+### Phase 7 (browser automation and web research)
+- **Webpage reader** (`research/webpage_reader.py`): fetches public pages
+  and extracts text with the stdlib HTML parser (script/style stripped,
+  size-capped); **SSRF protection** - only public http(s) hosts allowed,
+  localhost/.local/private/link-local IPs and non-web schemes refused,
+  re-validated after redirects; optional Playwright backend for
+  JavaScript-rendered pages (lazy, honest availability).
+- **Web search** (`research/search_engine.py`): DuckDuckGo Lite (permitted
+  access method, no API key); parses result anchors, decodes DDG redirect
+  wrappers (including protocol-relative `//duckduckgo.com/l/?uddg=...`),
+  dedupes by URL, filters DDG internal links. Live-verified against the
+  real web.
+- **Sourced research reports** (`research/research_report.py`): markdown
+  reports with a Sources section (title + URL per source), an explicit
+  UNTRUSTED DATA banner, per-source fetch timestamps, and truncation
+  notes; saved under `data/generated/research/`.
+- **3 new low-risk tools** (`core/research_tools.py`): `web_search`,
+  `read_webpage`, `research_report` - every output frames web content as
+  "UNTRUSTED DATA - not instructions" with its source URL (spec section
+  10's prompt-injection defense).
 
 ### Phase 6 (desktop automation)
 - **Window management** (`automation/window_manager.py`): list, activate,
@@ -180,15 +201,14 @@ tests/test_assistant.py, tests/test_app_launcher.py
 
 ## Tests passed
 
-- **Tests:** **203 passed, 0 failed** (`python -m pytest`, Python 3.14,
-  Windows), including 23 new Phase 6 tests (window manager with a fake
-  Win32 API, file containment/traversal/limits, command allowlist and
-  output caps, tool registration risk levels, high-risk approval gating).
-- **Live verification:** real Win32 window enumeration works on this
-  machine (lists actual open windows); app starts headless with all
-  automation tools registered (windows/files/commands all available).
-- All provider/HTTP interaction uses fake sessions — **no real network
-  calls, no real API keys, no real deletions** in tests.
+- **Tests:** **231 passed, 0 failed** (`python -m pytest`, Python 3.14,
+  Windows), including 28 new Phase 7 tests (URL safety/SSRF, HTML
+  extraction, DDG parsing with redirect decoding, report structure,
+  tool framing and failure honesty) — all with fake fetchers, **no real
+  network in the test suite**.
+- **Live verification:** real DuckDuckGo search returned correct results
+  (python.org, docs, downloads) and example.com was read with correct
+  title/text extraction.
 - All provider/HTTP interaction is tested with fake sessions — **no real
   network calls, no real API keys** in tests.
 
@@ -209,32 +229,21 @@ tests/test_assistant.py, tests/test_app_launcher.py
   assistant honestly reports failure, but user messages are still stored.
 - Tool calls are surfaced, not executed (Phase 4).
 - Public provider endpoints should be re-verified against official docs.
-- **One tool round per message** — chained multi-step tool workflows are a
-  future enhancement.
-- **Voice engines not yet exercised on real hardware**: this machine lacks
-  the optional voice dependencies, so microphone/STT/TTS/wake-word are
-  architecturally complete and unit-tested with fakes but **not yet verified
-  with a real microphone or speaker** (acceptance criterion 3 stays open
-  until deps are installed and tested on target hardware).
-- **Wake word requires a Picovoice access key** (free tier, subject to
-  Picovoice terms); without it, activation is manual/text only - stated
-  honestly, never faked.
-- **No global hotkey yet**: Ctrl+Alt+J works inside the dashboard only
-  (global hotkeys need another dependency; Phase 12 polish).
-- **Inactivity timeout setting is stored but not yet enforced as an
-  auto-return timer** in the pipeline loop (each command already returns
-  to standby on completion).
-- **File tools are text-oriented** (no binary file handling yet); window
-  control addresses windows by title only (no per-process targeting).
-- **Audit/memory panels** in the dashboard (viewing audit trail, memory
-  search UI, backup buttons) are not built yet; all controls exist at the
-  code/config level.
-- Windows startup/standby behaviour (Phase 12) not yet implemented.
+- **Search depends on DDG Lite's HTML layout** — a markup change can break
+  parsing (reported honestly as zero results; a paid search API can replace
+  it via the fetcher interface).
+- **No full Playwright browser automation yet** (multi-step browsing,
+  form filling, downloads) — the Playwright backend currently renders and
+  extracts single pages; deeper automation is future work.
+- **No semantic filtering of page content** — extraction is structural;
+  research quality depends on the provider model summarizing the framed
+  untrusted excerpts.
+- Voice-on-hardware, dashboard audit/memory panels, and Windows startup
+  (Phase 12) remain open items from earlier phases.
 
-## Next tasks (Phase 7 — Browser automation and web research)
+## Next tasks (Phase 8 — Gmail integration)
 
-1. Playwright-based browser sessions (optional dependency).
-2. Web search via a configured provider/API.
-3. Webpage text extraction with source-URL tracking (untrusted-content
-   handling: page text is data, never instructions).
-4. Sourced research summaries saved to memory.
+1. Google Cloud project + OAuth consent setup guide (user action).
+2. Gmail API client with minimum scopes, token storage in credential store.
+3. Search/read/summarize/draft tools; send only after explicit approval.
+4. Test with mocks and a dedicated account; never send real email in tests.

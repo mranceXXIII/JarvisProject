@@ -84,6 +84,18 @@ class VoiceSettings(BaseModel):
     tts_rate: int = Field(default=180, gt=50)
 
 
+class ResearchConfig(BaseModel):
+    """Web research settings (spec section 10)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    enabled: bool = True
+    timeout_seconds: int = Field(default=20, gt=0)
+    max_page_bytes: int = Field(default=524_288, gt=0)
+    max_search_results: int = Field(default=5, gt=0, le=10)
+    max_report_pages: int = Field(default=5, gt=0, le=10)
+
+
 class Settings(BaseModel):
     """Contents of ``settings.yaml``."""
 
@@ -92,6 +104,7 @@ class Settings(BaseModel):
     app: AppSettings = Field(default_factory=AppSettings)
     logging: LoggingSettings = Field(default_factory=LoggingSettings)
     voice: "VoiceSettings" = Field(default_factory=lambda: VoiceSettings())
+    research: "ResearchConfig" = Field(default_factory=lambda: ResearchConfig())
 
 
 class ProviderConfig(BaseModel):
@@ -167,6 +180,7 @@ class AppConfig(BaseModel):
     command_runner: "CommandRunnerConfig" = Field(
         default_factory=lambda: CommandRunnerConfig()
     )
+    research: "ResearchConfig" = Field(default_factory=lambda: ResearchConfig())
 
 
 class RoutingSettings(BaseModel):
@@ -407,8 +421,9 @@ def load_app_config(config_dir: Path | str = DEFAULT_CONFIG_DIR) -> AppConfig:
         ConfigError: if any file is missing, unreadable, or fails validation.
     """
     directory = Path(config_dir)
+    loaded_settings = load_settings(directory)
     return AppConfig(
-        settings=load_settings(directory),
+        settings=loaded_settings,
         providers=load_provider_configs(directory),
         gateways=load_gateway_configs(directory),
         routing=load_routing_config(directory),
@@ -416,4 +431,5 @@ def load_app_config(config_dir: Path | str = DEFAULT_CONFIG_DIR) -> AppConfig:
         permissions=load_permission_policy(directory),
         file_access=load_security_config(directory).file_access,
         command_runner=load_security_config(directory).command_runner,
+        research=loaded_settings.research,
     )

@@ -307,7 +307,10 @@ assistant in one script.
     (Win32/ctypes), contained file operations (allowed-roots policy),
     allowlisted command runner (no shell), screenshot capture - 11 new
     tools wired through the Phase 4 risk/approval/audit system.
-8.  ⏳ **Early slice done.** Application registry and safe app launcher
+8.  ✅ **Complete (Phase 7).** Web research: DuckDuckGo Lite search,
+    webpage reading with SSRF protection and untrusted-content framing,
+    sourced markdown reports; optional Playwright backend for JS pages.
+9.  ⏳ **Early slice done.** Application registry and safe app launcher
     (`config/applications.yaml`, `automation/app_launcher.py`) — registered
     apps (including PowerShell and Command Prompt) open from their
     configured directories.

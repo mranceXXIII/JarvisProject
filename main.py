@@ -79,7 +79,7 @@ def run() -> int:
         return 2
 
     setup_logging(app_config.settings.logging, project_root=PROJECT_ROOT)
-    logger.info("JARVIS starting (Phase 6: desktop automation enabled)")
+    logger.info("JARVIS starting (Phase 7: web research enabled)")
 
     credential_manager = CredentialManager()
     registry, gateways = build_registries(app_config, credential_manager)
@@ -114,6 +114,27 @@ def run() -> int:
     )
 
     audit = AuditLogger(data_dir / "audit" / "audit.log")
+
+    # Web research (Phase 7): search, page reading, sourced reports.
+    from core.research_tools import register_research_tools
+    from research.search_engine import DuckDuckGoSearch
+    from research.webpage_reader import WebPageReader
+
+    research_config = app_config.research
+    if research_config.enabled:
+        register_research_tools(
+            tool_registry,
+            DuckDuckGoSearch(
+                max_results=research_config.max_search_results,
+                timeout_seconds=research_config.timeout_seconds,
+            ),
+            WebPageReader(
+                max_bytes=research_config.max_page_bytes,
+                timeout_seconds=research_config.timeout_seconds,
+            ),
+            data_dir / "generated" / "research",
+            max_report_pages=research_config.max_report_pages,
+        )
     approvals = ApprovalManager(
         PermissionChecker(app_config.permissions), audit
     )

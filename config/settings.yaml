@@ -16,6 +16,15 @@ logging:
   max_bytes: 1048576
   backup_count: 5
 
+research:
+  # Web research (Phase 7). Fetching is read-only; page content is treated
+  # as untrusted data and never as instructions (spec section 10).
+  enabled: true
+  timeout_seconds: 20
+  max_page_bytes: 524288   # 512 KiB per page
+  max_search_results: 5
+  max_report_pages: 5
+
 voice:
   # Voice features are OPTIONAL. Engines load lazily; if a dependency
   # (sounddevice, faster-whisper, pyttsx3, pvporcupine) is missing, that
