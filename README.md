@@ -315,7 +315,13 @@ assistant in one script.
     setup`), search/read/draft tools (low risk) and `gmail_send` (high
     risk, approval-gated). Awaits your Google Cloud credentials — follow
     [`docs/GOOGLE_GMAIL_SETUP.md`](docs/GOOGLE_GMAIL_SETUP.md).
-10. ⏳ **Early slice done.** Application registry and safe app launcher
+10. ✅ **Complete (Phase 9).** Messaging: Telegram and Discord adapters
+    with manual token setup CLIs (`python -m integrations.telegram setup`,
+    `python -m integrations.discord setup`), read tools (low risk) and
+    send tools (high risk, approval-gated). Await your bot tokens — see
+    [`docs/TELEGRAM_SETUP.md`](docs/TELEGRAM_SETUP.md) and
+    [`docs/DISCORD_SETUP.md`](docs/DISCORD_SETUP.md).
+11. ⏳ **Early slice done.** Application registry and safe app launcher
     (`config/applications.yaml`, `automation/app_launcher.py`) — registered
     apps (including PowerShell and Command Prompt) open from their
     configured directories.

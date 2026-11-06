@@ -79,7 +79,7 @@ def run() -> int:
         return 2
 
     setup_logging(app_config.settings.logging, project_root=PROJECT_ROOT)
-    logger.info("JARVIS starting (Phase 8: Gmail integration ready)")
+    logger.info("JARVIS starting (Phase 9: messaging integrations ready)")
 
     credential_manager = CredentialManager()
     registry, gateways = build_registries(app_config, credential_manager)
@@ -145,6 +145,26 @@ def run() -> int:
             app_config.gmail, credential_manager, project_root=PROJECT_ROOT
         )
         register_gmail_tools(tool_registry, gmail_client)
+
+    # Messaging (Phase 9): Telegram and Discord, enabled + authorized only.
+    from integrations.discord.discord_client import DiscordClient
+    from integrations.messaging_tools import (
+        register_discord_tools,
+        register_telegram_tools,
+    )
+    from integrations.telegram.telegram_client import TelegramClient
+
+    if app_config.telegram.enabled:
+        telegram_client = TelegramClient(
+            app_config.telegram, credential_manager
+        )
+        register_telegram_tools(tool_registry, telegram_client)
+
+    if app_config.discord.enabled:
+        discord_client = DiscordClient(
+            app_config.discord, credential_manager
+        )
+        register_discord_tools(tool_registry, discord_client)
     approvals = ApprovalManager(
         PermissionChecker(app_config.permissions), audit
     )

@@ -38,6 +38,25 @@ gmail:
     - https://www.googleapis.com/auth/gmail.compose
     - https://www.googleapis.com/auth/gmail.send
 
+telegram:
+  # Telegram messaging (Phase 9). Requires a bot token from @BotFather -
+  # see docs/TELEGRAM_SETUP.md. Token lives in the Credential Manager.
+  # NOTE: bots can only read messages sent to them/in their groups after
+  # activation - Telegram bots cannot read arbitrary chat history.
+  enabled: false
+  bot_token_ref: jarvis/telegram-bot-token
+  poll_timeout_seconds: 5
+  max_messages: 10
+
+discord:
+  # Discord messaging (Phase 9). Requires a bot token from the Discord
+  # Developer Portal - see docs/DISCORD_SETUP.md. The bot must be invited
+  # to your server with the Message Content intent enabled.
+  enabled: false
+  bot_token_ref: jarvis/discord-bot-token
+  max_messages: 10
+  api_base: https://discord.com/api/v10
+
 voice:
   # Voice features are OPTIONAL. Engines load lazily; if a dependency
   # (sounddevice, faster-whisper, pyttsx3, pvporcupine) is missing, that

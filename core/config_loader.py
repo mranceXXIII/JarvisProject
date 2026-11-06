@@ -114,6 +114,28 @@ class GmailConfig(BaseModel):
     )
 
 
+class TelegramConfig(BaseModel):
+    """Telegram messaging settings (spec section 12)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    enabled: bool = False
+    bot_token_ref: str = "jarvis/telegram-bot-token"
+    poll_timeout_seconds: int = Field(default=5, gt=0, le=60)
+    max_messages: int = Field(default=10, gt=0, le=50)
+
+
+class DiscordConfig(BaseModel):
+    """Discord messaging settings (spec section 12)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    enabled: bool = False
+    bot_token_ref: str = "jarvis/discord-bot-token"
+    max_messages: int = Field(default=10, gt=0, le=50)
+    api_base: str = "https://discord.com/api/v10"
+
+
 class Settings(BaseModel):
     """Contents of ``settings.yaml``."""
 
@@ -124,6 +146,8 @@ class Settings(BaseModel):
     voice: "VoiceSettings" = Field(default_factory=lambda: VoiceSettings())
     research: "ResearchConfig" = Field(default_factory=lambda: ResearchConfig())
     gmail: "GmailConfig" = Field(default_factory=lambda: GmailConfig())
+    telegram: "TelegramConfig" = Field(default_factory=lambda: TelegramConfig())
+    discord: "DiscordConfig" = Field(default_factory=lambda: DiscordConfig())
 
 
 class ProviderConfig(BaseModel):
@@ -201,6 +225,8 @@ class AppConfig(BaseModel):
     )
     research: "ResearchConfig" = Field(default_factory=lambda: ResearchConfig())
     gmail: "GmailConfig" = Field(default_factory=lambda: GmailConfig())
+    telegram: "TelegramConfig" = Field(default_factory=lambda: TelegramConfig())
+    discord: "DiscordConfig" = Field(default_factory=lambda: DiscordConfig())
 
 
 class RoutingSettings(BaseModel):
@@ -453,4 +479,6 @@ def load_app_config(config_dir: Path | str = DEFAULT_CONFIG_DIR) -> AppConfig:
         command_runner=load_security_config(directory).command_runner,
         research=loaded_settings.research,
         gmail=loaded_settings.gmail,
+        telegram=loaded_settings.telegram,
+        discord=loaded_settings.discord,
     )

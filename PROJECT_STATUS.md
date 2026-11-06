@@ -1,10 +1,33 @@
 # JARVIS Project Status
 
-**Current phase:** Phase 8 complete — Gmail integration (awaits user's
-Google Cloud credentials; see docs/GOOGLE_GMAIL_SETUP.md).
+**Current phase:** Phase 9 complete — Messaging integrations (Telegram +
+Discord; await your bot tokens — see docs/TELEGRAM_SETUP.md and
+docs/DISCORD_SETUP.md).
 **Date:** 2026-11-06
 
 ## Completed features
+
+### Phase 9 (messaging integrations)
+- **Telegram adapter** (`integrations/telegram/telegram_client.py`):
+  Bot API via plain HTTPS (no new dependencies); token stored in the
+  Credential Manager under `jarvis/telegram-bot-token`; manual setup CLI
+  `python -m integrations.telegram setup|status|revoke` (validates the
+  token against `getMe` before storing); reads recent updates with
+  offset tracking; sends to chats.
+  **Platform limits documented:** bots see only messages sent to them /
+  their groups after activation, and only ~24h of updates.
+- **Discord adapter** (`integrations/discord/discord_client.py`): REST v10;
+  token in the Authorization header (never in URLs); setup CLI
+  `python -m integrations.discord setup|status|revoke`; lists guilds and
+  text channels, reads recent messages, posts messages. Requires the
+  Message Content intent + server invite (guide covers both).
+- **7 tools** (`integrations/messaging_tools.py`): telegram read (low),
+  telegram send (high), discord list guilds/channels + read (low),
+  discord send (high) — send tools always approval-gated and audited;
+  tools skipped honestly when not set up.
+- **Setup guides**: `docs/TELEGRAM_SETUP.md` (BotFather walkthrough) and
+  `docs/DISCORD_SETUP.md` (Developer Portal walkthrough with required
+  intents/permissions).
 
 ### Phase 8 (Gmail integration)
 - **OAuth client** (`integrations/gmail/gmail_client.py`): one-time
@@ -225,14 +248,14 @@ tests/test_assistant.py, tests/test_app_launcher.py
 
 ## Tests passed
 
-- **Tests:** **247 passed, 0 failed** (`python -m pytest`, Python 3.14,
-  Windows), including 16 new Gmail tests: authorization states, secure
-  token storage, search/read/draft/send against a fake service, MIME
-  encoding, tool registration risk gating, and honest skips when
-  unauthorized or dependencies missing.
-- **Live verification:** CLI `python -m integrations.gmail status` works
-  (honestly reports libraries not installed / not authorized until you
-  complete the setup guide); app runs headless with Gmail disabled.
+- **Tests:** **266 passed, 0 failed** (`python -m pytest`, Python 3.14,
+  Windows), including 19 new messaging tests: setup/verification flows,
+  token-never-leaks checks, update parsing, sends recorded, risk gating
+  of send tools, honest skips — all with fake HTTP layers, **no real
+  Telegram/Discord traffic**.
+- **Live verification:** both setup CLIs (`integrations.telegram`,
+  `integrations.discord`) report status honestly; app runs headless with
+  messaging disabled.
 - All provider/HTTP interaction is tested with fake sessions — **no real
   network calls, no real API keys** in tests.
 
@@ -257,6 +280,12 @@ tests/test_assistant.py, tests/test_app_launcher.py
   fake-tested but unverified against real Gmail until the user follows
   docs/GOOGLE_GMAIL_SETUP.md (acceptance criterion 14 partially open:
   drafts/approvals tested with fakes only).
+- **Messaging awaits user bot tokens** — adapters are code-complete and
+  fake-tested; live behavior (acceptance criterion 15) verified only after
+  tokens are added via the setup CLIs.
+- **No real-time gateway yet** — Telegram uses short polling and Discord
+  is read-on-demand rather than a persistent websocket gateway (a future
+  enhancement for push-style automation).
 - **Search depends on DDG Lite's HTML layout** — a markup change can break
   parsing (reported honestly as zero results; a paid search API can replace
   it via the fetcher interface).
@@ -266,9 +295,10 @@ tests/test_assistant.py, tests/test_app_launcher.py
 - Voice-on-hardware, dashboard audit/memory panels, and Windows startup
   (Phase 12) remain open items from earlier phases.
 
-## Next tasks (Phase 9 — Messaging integrations)
+## Next tasks (Phase 10 — Plugins and workflows)
 
-1. Telegram adapter (Bot API, read/send after approval).
-2. Discord adapter (bot token, message read/post).
-3. Platform limitation documentation per adapter.
-4. Mock-based tests with a dedicated test bot.
+1. Plugin manifest format, discovery, enable/disable lifecycle.
+2. Staged plugin generation with isolated checks before approval.
+3. Reusable YAML workflows ("start work", daily summary) with approval
+   policies respected.
+4. Workflow scheduling hooks (Phase 12 adds Windows startup integration).
