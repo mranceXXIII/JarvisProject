@@ -79,7 +79,7 @@ def run() -> int:
         return 2
 
     setup_logging(app_config.settings.logging, project_root=PROJECT_ROOT)
-    logger.info("JARVIS starting (Phase 9: messaging integrations ready)")
+    logger.info("JARVIS starting (Phase 10: plugins and workflows ready)")
 
     credential_manager = CredentialManager()
     registry, gateways = build_registries(app_config, credential_manager)
@@ -165,12 +165,48 @@ def run() -> int:
             app_config.discord, credential_manager
         )
         register_discord_tools(tool_registry, discord_client)
+
     approvals = ApprovalManager(
         PermissionChecker(app_config.permissions), audit
     )
     planner = TaskPlanner(tool_registry)
     executor = TaskExecutor(tool_registry, approvals, audit)
     assistant = JarvisAssistant(provider_manager, router, planner, executor)
+
+    # Plugins and workflows (Phase 10) - after planner/executor exist.
+    from core.management_tools import (
+        register_plugin_tools,
+        register_workflow_tools,
+    )
+    from core.workflow_manager import WorkflowManager
+    from plugins.plugin_manager import PluginManager
+
+    def _plugin_approver(tool: str, description: str) -> bool:
+        """Route plugin install decisions through the approval system."""
+        decision = approvals.request(
+            ToolDefinition(
+                name=tool,
+                description=description,
+                risk="medium",
+                parameters={},
+            ),
+            {},
+        )
+        return decision.approved
+
+    plugin_manager = PluginManager(
+        PROJECT_ROOT / "plugins", tool_registry, audit
+    )
+    register_plugin_tools(tool_registry, plugin_manager)
+    plugin_manager.set_approver(_plugin_approver)
+    loaded_plugins = plugin_manager.load_installed_plugins()
+    logger.info("loaded %d plugin(s)", loaded_plugins)
+
+    workflow_manager = WorkflowManager(
+        args.config_dir / "workflows.yaml", planner, executor, audit
+    )
+    register_workflow_tools(tool_registry, workflow_manager)
+    logger.info("loaded %d workflow(s)", len(workflow_manager.list_workflows()))
 
     # Voice (Phase 5): optional; engines degrade honestly when unavailable.
     voice_pipeline = None

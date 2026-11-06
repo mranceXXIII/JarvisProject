@@ -1,0 +1,29 @@
+# JARVIS reusable workflows (spec section 15).
+#
+# A workflow is a named sequence of tool calls. Run one by saying
+# "run workflow <name>" (or via the workflow_run tool).
+#
+# IMPORTANT: every step still passes the permission checker, approval
+# dialog, and audit trail when the workflow runs - a workflow never
+# bypasses the approval-first model.
+#
+# schedule (optional): a cron-like string RESERVED for Phase 12 scheduled
+# execution. For now workflows run on demand only.
+
+workflows:
+  - name: start_work
+    description: Show the current time and list available applications
+    steps:
+      - tool: get_current_time
+        arguments: {}
+      - tool: list_applications
+        arguments: {}
+
+  - name: morning_briefing
+    description: Current time plus a screenshot for a quick visual check
+    schedule: "0 8 * * *"   # stored for Phase 12; runs on demand for now
+    steps:
+      - tool: get_current_time
+        arguments: {}
+      - tool: take_screenshot
+        arguments: {}

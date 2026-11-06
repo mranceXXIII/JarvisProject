@@ -17,3 +17,4 @@ config/*token*.json
 # Generated / backup files
 *.bak
 config/backups/
+plugins/staging/

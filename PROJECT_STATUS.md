@@ -1,8 +1,6 @@
 # JARVIS Project Status
 
-**Current phase:** Phase 9 complete — Messaging integrations (Telegram +
-Discord; await your bot tokens — see docs/TELEGRAM_SETUP.md and
-docs/DISCORD_SETUP.md).
+**Current phase:** Phase 10 complete — Plugins and workflows.
 **Date:** 2026-11-06
 
 ## Completed features
@@ -248,14 +246,13 @@ tests/test_assistant.py, tests/test_app_launcher.py
 
 ## Tests passed
 
-- **Tests:** **266 passed, 0 failed** (`python -m pytest`, Python 3.14,
-  Windows), including 19 new messaging tests: setup/verification flows,
-  token-never-leaks checks, update parsing, sends recorded, risk gating
-  of send tools, honest skips — all with fake HTTP layers, **no real
-  Telegram/Discord traffic**.
-- **Live verification:** both setup CLIs (`integrations.telegram`,
-  `integrations.discord`) report status honestly; app runs headless with
-  messaging disabled.
+- **Tests:** **286 passed, 0 failed** (`python -m pytest`, Python 3.14,
+  Windows), including 20 new Phase 10 tests: AST static analysis
+  (subprocess/network/eval detection), staging + validation, approval/deny
+  installation, disable persistence, workflow CRUD + persistence, run with
+  per-step approvals, denial handling.
+- **Live verification:** app starts headless, loads 0 plugins and the 2
+  example workflows; plugin + workflow tools registered.
 - All provider/HTTP interaction is tested with fake sessions — **no real
   network calls, no real API keys** in tests.
 
@@ -294,11 +291,16 @@ tests/test_assistant.py, tests/test_app_launcher.py
   extracts single pages; deeper automation is future work.
 - Voice-on-hardware, dashboard audit/memory panels, and Windows startup
   (Phase 12) remain open items from earlier phases.
+- **Plugins run in-process** (no OS sandbox) — mitigated by staged static
+  analysis, declared permissions, and approval, but not sandboxed.
+- **Workflow `schedule` fields are stored but not executed yet** (Phase 12).
+- **Workflow steps are fixed tool calls** — no conditional logic or output
+  piping between steps yet.
 
-## Next tasks (Phase 10 — Plugins and workflows)
+## Next tasks (Phase 11 — Security and reliability)
 
-1. Plugin manifest format, discovery, enable/disable lifecycle.
-2. Staged plugin generation with isolated checks before approval.
-3. Reusable YAML workflows ("start work", daily summary) with approval
-   policies respected.
-4. Workflow scheduling hooks (Phase 12 adds Windows startup integration).
+1. End-to-end permission/approval enforcement tests (existing suites plus
+   targeted integration tests).
+2. Prompt-injection resistance checks (research tools + email content).
+3. Secret-handling tests across all integrations (log/audit redaction).
+4. Provider failure and fallback tests; database backup/recovery tests.

@@ -321,7 +321,11 @@ assistant in one script.
     send tools (high risk, approval-gated). Await your bot tokens — see
     [`docs/TELEGRAM_SETUP.md`](docs/TELEGRAM_SETUP.md) and
     [`docs/DISCORD_SETUP.md`](docs/DISCORD_SETUP.md).
-11. ⏳ **Early slice done.** Application registry and safe app launcher
+11. ✅ **Complete (Phase 10).** Plugin lifecycle (staging, AST safety
+    analysis, approval-gated installation, enable/disable) and reusable
+    YAML workflows that replay steps through the approval/audit system.
+    See [`docs/PLUGINS_AND_WORKFLOWS.md`](docs/PLUGINS_AND_WORKFLOWS.md).
+12. ⏳ **Early slice done.** Application registry and safe app launcher
     (`config/applications.yaml`, `automation/app_launcher.py`) — registered
     apps (including PowerShell and Command Prompt) open from their
     configured directories.
