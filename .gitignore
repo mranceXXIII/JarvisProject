@@ -18,3 +18,4 @@ config/*token*.json
 *.bak
 config/backups/
 plugins/staging/
+releases/

@@ -55,6 +55,21 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=PROJECT_ROOT / "config",
         help="configuration directory (default: ./config)",
     )
+    parser.add_argument(
+        "--enable-startup",
+        action="store_true",
+        help="register JARVIS to start at Windows sign-in, then exit",
+    )
+    parser.add_argument(
+        "--disable-startup",
+        action="store_true",
+        help="remove the sign-in startup entry, then exit",
+    )
+    parser.add_argument(
+        "--startup-status",
+        action="store_true",
+        help="show the sign-in startup state, then exit",
+    )
     return parser.parse_args(argv)
 
 
@@ -79,7 +94,7 @@ def run() -> int:
         return 2
 
     setup_logging(app_config.settings.logging, project_root=PROJECT_ROOT)
-    logger.info("JARVIS starting (Phase 10: plugins and workflows ready)")
+    logger.info("JARVIS starting (Phase 12: release candidate)")
 
     credential_manager = CredentialManager()
     registry, gateways = build_registries(app_config, credential_manager)
@@ -207,6 +222,27 @@ def run() -> int:
     )
     register_workflow_tools(tool_registry, workflow_manager)
     logger.info("loaded %d workflow(s)", len(workflow_manager.list_workflows()))
+
+    # Windows startup (Phase 12).
+    from core.management_tools import register_startup_tools
+    from core.startup_manager import StartupManager
+
+    startup_manager = StartupManager(PROJECT_ROOT)
+    register_startup_tools(tool_registry, startup_manager)
+    if args.enable_startup:
+        print(startup_manager.enable())
+        return 0
+    if args.disable_startup:
+        print(startup_manager.disable())
+        return 0
+    if args.startup_status:
+        state = (
+            f"ENABLED: {startup_manager.get_command()}"
+            if startup_manager.is_enabled()
+            else "disabled"
+        )
+        print(f"JARVIS sign-in startup is {state}")
+        return 0
 
     # Voice (Phase 5): optional; engines degrade honestly when unavailable.
     voice_pipeline = None

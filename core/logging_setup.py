@@ -24,6 +24,7 @@ _TOKEN_PATTERNS: tuple[Pattern[str], ...] = (
     re.compile(r"ghp_[A-Za-z0-9]{20,}"),           # GitHub personal tokens
     re.compile(r"AIza[0-9A-Za-z_-]{30,}"),         # Google API keys
     re.compile(r"Bearer\s+[A-Za-z0-9._-]{20,}"),   # Bearer headers
+    re.compile(r"\b\d{8,10}:[A-Za-z0-9_-]{30,}\b"),  # Telegram bot tokens
 )
 
 

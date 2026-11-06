@@ -263,6 +263,50 @@ def register_workflow_tools(
     logger.info("workflow tools registered")
 
 
+def register_startup_tools(registry: ToolRegistry, startup_manager) -> None:
+    """Register Windows startup tools (Phase 12, spec section 17)."""
+    if not startup_manager.available:
+        logger.info("startup tools skipped: registry unavailable")
+        return
+
+    registry.register(
+        ToolDefinition(
+            name="startup_status",
+            description="Check whether JARVIS starts at Windows sign-in",
+            risk="low",
+            parameters={},
+        ),
+        _wrap_tool(
+            "startup_status",
+            lambda: (
+                "Startup ENABLED: "
+                + str(startup_manager.get_command())
+                if startup_manager.is_enabled()
+                else "Startup disabled."
+            ),
+        ),
+    )
+    registry.register(
+        ToolDefinition(
+            name="startup_enable",
+            description="Make JARVIS start automatically at Windows sign-in",
+            risk="medium",
+            parameters={},
+        ),
+        _wrap_tool("startup_enable", startup_manager.enable),
+    )
+    registry.register(
+        ToolDefinition(
+            name="startup_disable",
+            description="Stop JARVIS from starting at Windows sign-in",
+            risk="medium",
+            parameters={},
+        ),
+        _wrap_tool("startup_disable", startup_manager.disable),
+    )
+    logger.info("startup tools registered")
+
+
 def _workflow_saver(manager: WorkflowManager):
     def save(name: str, steps: str, description: str = "") -> str:
         parsed: list[dict] = []

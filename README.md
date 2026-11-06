@@ -325,7 +325,10 @@ assistant in one script.
     analysis, approval-gated installation, enable/disable) and reusable
     YAML workflows that replay steps through the approval/audit system.
     See [`docs/PLUGINS_AND_WORKFLOWS.md`](docs/PLUGINS_AND_WORKFLOWS.md).
-12. ⏳ **Early slice done.** Application registry and safe app launcher
+12. ✅ **Complete (Phase 12).** Windows startup manager (per-user Run key,
+    CLI flags + tools), launcher, release packaging script. See
+    [`PROJECT_STATUS.md`](PROJECT_STATUS.md) for the full acceptance list.
+13. ⏳ **Early slice done.** Application registry and safe app launcher
     (`config/applications.yaml`, `automation/app_launcher.py`) — registered
     apps (including PowerShell and Command Prompt) open from their
     configured directories.

@@ -1,9 +1,39 @@
 # JARVIS Project Status
 
-**Current phase:** Phase 10 complete — Plugins and workflows.
+**Current phase:** Phases 1-12 complete — Release candidate.
 **Date:** 2026-11-06
 
 ## Completed features
+
+### Phase 11 (security and reliability — test hardening)
+- **End-to-end approval enforcement**: high-risk file deletion through the
+  full planner → approval → executor stack; denial means nothing happens,
+  approval executes + audits.
+- **Prompt-injection resistance**: injected instructions in web pages and
+  email bodies remain inert data (UNTRUSTED framing verified); model tool
+  calls to unregistered tools are rejected by the planner regardless of
+  phrasing; no execution path exists for tools not in the registry.
+- **Secret handling across integrations**: Telegram/Discord errors never
+  contain tokens; Telegram bot-token pattern added to the log redaction
+  filter (hardening fix); registered secrets masked everywhere.
+- **Provider fallback resilience**: rate-limit triggers fallback with
+  honest error recording; all-providers-failed reports honestly.
+- **Database backup/recovery**: restore-from-backup after simulated data
+  loss verified (conversations + messages survive).
+
+### Phase 12 (Windows integration and release)
+- **Startup manager** (`core/startup_manager.py`): per-user Run key
+  (HKCU, no admin needed); enable/disable/status; venv pythonw preferred;
+  injectable registry layer; CLI flags `--enable-startup`,
+  `--disable-startup`, `--startup-status`; tools `startup_status` (low),
+  `startup_enable` / `startup_disable` (medium). Live-verified.
+- **Launcher** (`launcher.py`): shortcut/startup-friendly entry that picks
+  the venv interpreter (pythonw first) and re-executes `main.py`.
+- **Packaging** (`scripts/package_release.ps1`): builds `releases/jarvis-
+  <timestamp>.zip` excluding venv/git/data/logs/secrets/tokens, with
+  sanity checks; verified end-to-end (199 KB release produced).
+- **Idle behaviour**: only standby components initialize; expensive AI
+  work happens on activation; clean shutdown of all threads verified.
 
 ### Phase 9 (messaging integrations)
 - **Telegram adapter** (`integrations/telegram/telegram_client.py`):
@@ -246,13 +276,14 @@ tests/test_assistant.py, tests/test_app_launcher.py
 
 ## Tests passed
 
-- **Tests:** **286 passed, 0 failed** (`python -m pytest`, Python 3.14,
-  Windows), including 20 new Phase 10 tests: AST static analysis
-  (subprocess/network/eval detection), staging + validation, approval/deny
-  installation, disable persistence, workflow CRUD + persistence, run with
-  per-step approvals, denial handling.
-- **Live verification:** app starts headless, loads 0 plugins and the 2
-  example workflows; plugin + workflow tools registered.
+- **Tests:** **308 passed, 0 failed** (`python -m pytest`, Python 3.14,
+  Windows) — 22 new security/reliability tests in Phase 11 (approval
+  enforcement E2E, injection resistance, token-leak checks, fallback,
+  backup recovery) and 9 in Phase 12 (startup manager + tools against a
+  fake registry).
+- **Live verification (Phase 12):** `python main.py --startup-status`
+  reports honestly; release packaging produced a 199 KB zip with all
+  artifacts and secrets excluded.
 - All provider/HTTP interaction is tested with fake sessions — **no real
   network calls, no real API keys** in tests.
 
@@ -297,10 +328,15 @@ tests/test_assistant.py, tests/test_app_launcher.py
 - **Workflow steps are fixed tool calls** — no conditional logic or output
   piping between steps yet.
 
-## Next tasks (Phase 11 — Security and reliability)
+## Next tasks (post-release backlog)
 
-1. End-to-end permission/approval enforcement tests (existing suites plus
-   targeted integration tests).
-2. Prompt-injection resistance checks (research tools + email content).
-3. Secret-handling tests across all integrations (log/audit redaction).
-4. Provider failure and fallback tests; database backup/recovery tests.
+All 12 phases of the development plan are implemented. Honest remaining
+items (also listed under Known limitations):
+1. Voice engine verification on real microphone/speaker hardware.
+2. Gmail live verification once Google Cloud credentials are added
+   (docs/GOOGLE_GMAIL_SETUP.md).
+3. Telegram/Discord live verification once bot tokens are added.
+4. Scheduled workflow execution (schedule strings stored, execution is
+   Phase 12+ backlog).
+5. Dashboard panels for audit trail, memory search, and backups.
+6. Optional PyInstaller single-exe packaging (zip release shipped first).

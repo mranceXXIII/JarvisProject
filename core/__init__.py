@@ -5,5 +5,6 @@ __all__ = [
     "assistant",
     "config_loader",
     "logging_setup",
+    "startup_manager",
     "state_manager",
 ]
