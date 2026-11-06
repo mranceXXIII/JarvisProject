@@ -96,6 +96,24 @@ class ResearchConfig(BaseModel):
     max_report_pages: int = Field(default=5, gt=0, le=10)
 
 
+class GmailConfig(BaseModel):
+    """Gmail integration settings (spec section 11)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    enabled: bool = False
+    client_secrets_file: str = "config/google_client_secret.json"
+    token_credential_ref: str = "jarvis/gmail-token"
+    max_results: int = Field(default=10, gt=0, le=50)
+    scopes: list[str] = Field(
+        default_factory=lambda: [
+            "https://www.googleapis.com/auth/gmail.readonly",
+            "https://www.googleapis.com/auth/gmail.compose",
+            "https://www.googleapis.com/auth/gmail.send",
+        ]
+    )
+
+
 class Settings(BaseModel):
     """Contents of ``settings.yaml``."""
 
@@ -105,6 +123,7 @@ class Settings(BaseModel):
     logging: LoggingSettings = Field(default_factory=LoggingSettings)
     voice: "VoiceSettings" = Field(default_factory=lambda: VoiceSettings())
     research: "ResearchConfig" = Field(default_factory=lambda: ResearchConfig())
+    gmail: "GmailConfig" = Field(default_factory=lambda: GmailConfig())
 
 
 class ProviderConfig(BaseModel):
@@ -181,6 +200,7 @@ class AppConfig(BaseModel):
         default_factory=lambda: CommandRunnerConfig()
     )
     research: "ResearchConfig" = Field(default_factory=lambda: ResearchConfig())
+    gmail: "GmailConfig" = Field(default_factory=lambda: GmailConfig())
 
 
 class RoutingSettings(BaseModel):
@@ -432,4 +452,5 @@ def load_app_config(config_dir: Path | str = DEFAULT_CONFIG_DIR) -> AppConfig:
         file_access=load_security_config(directory).file_access,
         command_runner=load_security_config(directory).command_runner,
         research=loaded_settings.research,
+        gmail=loaded_settings.gmail,
     )

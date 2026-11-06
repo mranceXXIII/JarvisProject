@@ -11,6 +11,8 @@ data/
 logs/
 *.log
 .env
+config/google_client_secret*.json
+config/*token*.json
 
 # Generated / backup files
 *.bak

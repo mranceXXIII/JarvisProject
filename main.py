@@ -79,7 +79,7 @@ def run() -> int:
         return 2
 
     setup_logging(app_config.settings.logging, project_root=PROJECT_ROOT)
-    logger.info("JARVIS starting (Phase 7: web research enabled)")
+    logger.info("JARVIS starting (Phase 8: Gmail integration ready)")
 
     credential_manager = CredentialManager()
     registry, gateways = build_registries(app_config, credential_manager)
@@ -135,6 +135,16 @@ def run() -> int:
             data_dir / "generated" / "research",
             max_report_pages=research_config.max_report_pages,
         )
+
+    # Gmail (Phase 8): registers only when enabled + authorized.
+    from integrations.gmail.gmail_client import GmailClient
+    from integrations.gmail.gmail_tools import register_gmail_tools
+
+    if app_config.gmail.enabled:
+        gmail_client = GmailClient(
+            app_config.gmail, credential_manager, project_root=PROJECT_ROOT
+        )
+        register_gmail_tools(tool_registry, gmail_client)
     approvals = ApprovalManager(
         PermissionChecker(app_config.permissions), audit
     )

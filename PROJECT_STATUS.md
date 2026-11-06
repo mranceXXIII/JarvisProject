@@ -1,9 +1,33 @@
 # JARVIS Project Status
 
-**Current phase:** Phase 7 complete — Browser automation and web research.
-**Date:** 2026-11-01
+**Current phase:** Phase 8 complete — Gmail integration (awaits user's
+Google Cloud credentials; see docs/GOOGLE_GMAIL_SETUP.md).
+**Date:** 2026-11-06
 
 ## Completed features
+
+### Phase 8 (Gmail integration)
+- **OAuth client** (`integrations/gmail/gmail_client.py`): one-time
+  interactive OAuth with minimum scopes (readonly + compose + send);
+  refresh token stored ONLY in the Windows Credential Manager under
+  `jarvis/gmail-token` — never in files or git.
+- **Manual setup function/CLI** (the "add the API yourself" entry point):
+  - `python -m integrations.gmail setup` — runs the OAuth flow
+  - `python -m integrations.gmail status` — libraries/authorization state
+  - `python -m integrations.gmail revoke` — remove the stored token
+- **Tools** (`integrations/gmail/gmail_tools.py`): `gmail_search` (low),
+  `gmail_read` (low), `gmail_create_draft` (low, never sends),
+  `gmail_send` (**high** — approval dialog always shown before sending).
+  Tools register only when enabled + authorized; otherwise skipped with
+  an honest log message explaining the exact setup command.
+- **Message handling**: Gmail query search, full message reading with
+  base64 body decoding (multipart-aware), MIME-correct draft/send
+  composition.
+- **Setup guide**: `docs/GOOGLE_GMAIL_SETUP.md` (Cloud project, Gmail API,
+  consent screen, Desktop client, secrets file placement, authorization,
+  troubleshooting).
+- Dependencies optional (`requirements-gmail.txt`); tests use a fake
+  Gmail service — **no real email is ever touched in tests** (spec 11/21).
 
 ### Phase 7 (browser automation and web research)
 - **Webpage reader** (`research/webpage_reader.py`): fetches public pages
@@ -201,14 +225,14 @@ tests/test_assistant.py, tests/test_app_launcher.py
 
 ## Tests passed
 
-- **Tests:** **231 passed, 0 failed** (`python -m pytest`, Python 3.14,
-  Windows), including 28 new Phase 7 tests (URL safety/SSRF, HTML
-  extraction, DDG parsing with redirect decoding, report structure,
-  tool framing and failure honesty) — all with fake fetchers, **no real
-  network in the test suite**.
-- **Live verification:** real DuckDuckGo search returned correct results
-  (python.org, docs, downloads) and example.com was read with correct
-  title/text extraction.
+- **Tests:** **247 passed, 0 failed** (`python -m pytest`, Python 3.14,
+  Windows), including 16 new Gmail tests: authorization states, secure
+  token storage, search/read/draft/send against a fake service, MIME
+  encoding, tool registration risk gating, and honest skips when
+  unauthorized or dependencies missing.
+- **Live verification:** CLI `python -m integrations.gmail status` works
+  (honestly reports libraries not installed / not authorized until you
+  complete the setup guide); app runs headless with Gmail disabled.
 - All provider/HTTP interaction is tested with fake sessions — **no real
   network calls, no real API keys** in tests.
 
@@ -229,21 +253,22 @@ tests/test_assistant.py, tests/test_app_launcher.py
   assistant honestly reports failure, but user messages are still stored.
 - Tool calls are surfaced, not executed (Phase 4).
 - Public provider endpoints should be re-verified against official docs.
+- **Gmail awaits user credentials** — integration is code-complete and
+  fake-tested but unverified against real Gmail until the user follows
+  docs/GOOGLE_GMAIL_SETUP.md (acceptance criterion 14 partially open:
+  drafts/approvals tested with fakes only).
 - **Search depends on DDG Lite's HTML layout** — a markup change can break
   parsing (reported honestly as zero results; a paid search API can replace
   it via the fetcher interface).
 - **No full Playwright browser automation yet** (multi-step browsing,
   form filling, downloads) — the Playwright backend currently renders and
   extracts single pages; deeper automation is future work.
-- **No semantic filtering of page content** — extraction is structural;
-  research quality depends on the provider model summarizing the framed
-  untrusted excerpts.
 - Voice-on-hardware, dashboard audit/memory panels, and Windows startup
   (Phase 12) remain open items from earlier phases.
 
-## Next tasks (Phase 8 — Gmail integration)
+## Next tasks (Phase 9 — Messaging integrations)
 
-1. Google Cloud project + OAuth consent setup guide (user action).
-2. Gmail API client with minimum scopes, token storage in credential store.
-3. Search/read/summarize/draft tools; send only after explicit approval.
-4. Test with mocks and a dedicated account; never send real email in tests.
+1. Telegram adapter (Bot API, read/send after approval).
+2. Discord adapter (bot token, message read/post).
+3. Platform limitation documentation per adapter.
+4. Mock-based tests with a dedicated test bot.

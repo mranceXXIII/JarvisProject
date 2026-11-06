@@ -310,7 +310,12 @@ assistant in one script.
 8.  ✅ **Complete (Phase 7).** Web research: DuckDuckGo Lite search,
     webpage reading with SSRF protection and untrusted-content framing,
     sourced markdown reports; optional Playwright backend for JS pages.
-9.  ⏳ **Early slice done.** Application registry and safe app launcher
+9.  ✅ **Complete (Phase 8).** Gmail integration: OAuth with credential-
+    store tokens, manual setup CLI (`python -m integrations.gmail
+    setup`), search/read/draft tools (low risk) and `gmail_send` (high
+    risk, approval-gated). Awaits your Google Cloud credentials — follow
+    [`docs/GOOGLE_GMAIL_SETUP.md`](docs/GOOGLE_GMAIL_SETUP.md).
+10. ⏳ **Early slice done.** Application registry and safe app launcher
     (`config/applications.yaml`, `automation/app_launcher.py`) — registered
     apps (including PowerShell and Command Prompt) open from their
     configured directories.

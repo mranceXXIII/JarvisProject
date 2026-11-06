@@ -25,6 +25,19 @@ research:
   max_search_results: 5
   max_report_pages: 5
 
+gmail:
+  # Gmail integration (Phase 8). Requires one-time OAuth setup - see
+  # docs/GOOGLE_GMAIL_SETUP.md. The refresh token is stored in the Windows
+  # Credential Manager, never in files. Sending always requires approval.
+  enabled: false
+  client_secrets_file: config/google_client_secret.json
+  token_credential_ref: jarvis/gmail-token
+  max_results: 10
+  scopes:
+    - https://www.googleapis.com/auth/gmail.readonly
+    - https://www.googleapis.com/auth/gmail.compose
+    - https://www.googleapis.com/auth/gmail.send
+
 voice:
   # Voice features are OPTIONAL. Engines load lazily; if a dependency
   # (sounddevice, faster-whisper, pyttsx3, pvporcupine) is missing, that

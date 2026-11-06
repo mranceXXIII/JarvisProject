@@ -1,0 +1,9 @@
+# JARVIS Gmail integration dependencies (spec section 11).
+#
+# These are NOT required for the rest of JARVIS. Install only when you set
+# up Gmail (see docs/GOOGLE_GMAIL_SETUP.md):
+#   python -m pip install -r requirements-gmail.txt
+
+google-api-python-client>=2.100
+google-auth>=2.23
+google-auth-oauthlib>=1.1
