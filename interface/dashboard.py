@@ -81,11 +81,6 @@ class Dashboard(ctk.CTk):
         self.api_panel = _build_api_panel(
             settings_tab, self._provider_manager, self._config
         )
-        if self._assistant is not None and self._memory_store is not None:
-            self.chat_panel = _build_chat_panel(
-                home_tab, self._assistant, self._memory_store,
-                on_status=self._set_status,
-            )
 
         footer = ctk.CTkFrame(self, fg_color="transparent")
         footer.grid(row=1, column=0, padx=12, pady=(0, 12), sticky="ew")
@@ -133,7 +128,7 @@ class Dashboard(ctk.CTk):
 
         if self._assistant is not None and self._memory_store is not None:
             self.chat_panel = _build_chat_panel(
-                home_tab,
+                tab,
                 self._assistant,
                 self._memory_store,
                 on_status=self._set_status,
